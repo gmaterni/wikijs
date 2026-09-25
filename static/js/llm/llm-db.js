@@ -3,8 +3,8 @@
  *
  * Due object store isolati: discovered-models (modelli trovati e validati dal
  * test) e selected-models (modelli scelti dall'utente per l'albero LLM).
- * Il database è dedicato e isolato per utente: RagIndexLLM_<userId>, con lo
- * stesso userId usato da RagIndexDB_<userId> (services/db_instance.js).
+ * Il database è dedicato e isolato per utente: wikijs_llm_<userId>, con lo
+ * stesso userId usato da wikijs_app_<userId> (services/db_instance.js).
  *
  * @module llm/llm-db
  * @version 1.0.0
@@ -21,7 +21,7 @@ import { WebId } from "../services/webuser_id.js";
 // ============================================================================
 
 /** Nome del database: isolato per utente come il DB applicativo. */
-const DB_NAME = `RagIndexLLM_${WebId.get()}`;
+const DB_NAME = `wikijs_llm_${WebId.get()}`;
 
 /** Versione dello schema Dexie. */
 const DB_VERSION = 1;

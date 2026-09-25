@@ -1,8 +1,8 @@
 /**
- * rag_engine.js - Ponte tra la UI (stile ragindex) e il motore WikiJS.
+ * rag_engine.js - Ponte tra la UI dell'applicazione e il motore WikiJS.
  *
- * Mantiene la stessa API che `app_ui.js` e `app_mgr.js` si aspettano da
- * ragindex (`init`, `stop`, `getOptimizedContext`, `generateResponse`),
+ * Mantiene la stessa API che `app_ui.js` e `app_mgr.js` si aspettano
+ * (`init`, `stop`, `getOptimizedContext`, `generateResponse`),
  * ma esegue la pipeline di query WikiJS (`kbQuery`, index-first con
  * citazioni verificate) e formatta le risposte in markdown per la chat.
  *
@@ -14,7 +14,7 @@
 
 "use strict";
 
-import { kbQuery } from "./kb/api.js";
+import { kbQuery } from "./kb/index.js";
 import { getKbId } from "./kb_ui_state.js";
 
 // Codice di errore convenzionale per l'interruzione volontaria.
@@ -22,6 +22,9 @@ const CANCELLED_CODE = 499;
 
 // Controller dell'operazione in corso (STOP).
 let _controller = null;
+
+// Controller della build in corso (STOP durante la compilazione).
+let _buildController = null;
 
 // Ultimo risultato di query, per non rieseguirla nella stessa domanda.
 let _lastResult = null;
@@ -143,7 +146,7 @@ const _lastUserMessage = function (thread) {
 export const ragEngine = {
 
     /**
-     * Memorizza il contesto di esecuzione (compatibilità ragindex).
+     * Memorizza il contesto di esecuzione (compatibilità applicativa).
      *
      * @param {object} client - Client LLM attivo.
      * @param {string} model - Modello attivo.
@@ -167,11 +170,33 @@ export const ragEngine = {
     },
 
     /**
+     * Apre la compilazione come operazione annullabile da `stop()`.
+     *
+     * @returns {AbortSignal} Segnale da passare a `kbBuild`.
+     */
+    beginBuild: function () {
+        _buildController = new AbortController();
+        return _buildController.signal;
+    },
+
+    /**
+     * Chiude la compilazione in corso.
+     *
+     * @returns {void}
+     */
+    endBuild: function () {
+        _buildController = null;
+    },
+
+    /**
      * Interrompe l'operazione in corso (STOP della UI).
      *
      * @returns {void}
      */
     stop: function () {
+        if (_buildController) {
+            _buildController.abort();
+        }
         if (_controller) {
             _controller.abort();
         }

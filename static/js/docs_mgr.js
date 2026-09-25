@@ -1,85 +1,161 @@
 /**
- * @fileoverview docs_mgr.js - Gestore documenti dell'applicazione
- * @description Fornisce funzioni per gestire documenti caricati dall'utente.
- *              Modulo specifico dell'applicazione RagIndex.
+ * docs_mgr.js - Gestore documenti della Knowledge Base attiva.
+ *
+ * API documenti invariata (init/add/read/names/name/doc/delete/exists),
+ * ma i documenti sono le sorgenti del motore WikiJS: `add` registra una
+ * sorgente, `delete` rimuove la sorgente e (se elaborata) le pagine che
+ * dipendono solo da lei, in un'unica transazione.
+ *
  * @module docs_mgr
+ * @version 1.0.0
+ * @date 2026-09-25
+ * @author WikiJS
  */
+
 "use strict";
 
-import { DataRepository } from "./services/data_repository.js";
-import { DATA_KEYS } from "./services/data_keys.js";
+import { addSource, listSources, readSource, deleteSource } from "./kb/index.js";
+import { getKbId } from "./kb_ui_state.js";
 
-// ============================================================================
-// VARIABILI PRIVATE
-// ============================================================================
-
+// Cache dei nomi, allineata a ogni operazione.
 let _names = [];
 
-const _init = async function() {
-    const data = await DataRepository.getSetting(DATA_KEYS.KEY_DOCS);
-    _names = data ? JSON.parse(data) : [];
+/**
+ * Elenca le sorgenti della KB attiva e aggiorna la cache.
+ *
+ * @returns {Promise<Array<string>>} Nomi ordinati.
+ */
+const _refreshNames = async function () {
+    const kbId = await getKbId();
+    const sources = await listSources(kbId);
+    _names = sources.map(function (row) {
+        return row.name;
+    });
+    return _names;
 };
-
-// ============================================================================
-// API PUBBLICA
-// ============================================================================
 
 export const DocsMgr = {
 
-    init: async function() {
-        const done = await _init();
-        return done;
+    /**
+     * Inizializza il gestore.
+     *
+     * @returns {Promise<Array<string>>} Nomi caricati.
+     */
+    init: async function () {
+        const names = await _refreshNames();
+        return names;
     },
 
-    add: async function(name, doc) {
-        await _init();
-
-        if (!_names.includes(name)) {
-            _names.push(name);
-            await DataRepository.saveSetting(DATA_KEYS.KEY_DOCS, JSON.stringify(_names));
+    /**
+     * Registra un documento come sorgente.
+     *
+     * @param {string} name - Nome del file.
+     * @param {string} doc - Testo (già pulito dall'uploader).
+     * @returns {Promise<boolean>} Vero a registrazione avvenuta.
+     */
+    add: async function (name, doc) {
+        if (typeof name !== "string" || typeof doc !== "string") {
+            console.error("DocsMgr.add: parametri non validi");
+            return false;
         }
-
-        await DataRepository.saveDoc(`${DATA_KEYS.KEY_DOC_PRE}${name}`, doc);
+        const kbId = await getKbId();
+        const saved = await addSource({ kbId: kbId, name: name, mime: "text/plain", text: doc });
+        if (!saved) {
+            return false;
+        }
+        await _refreshNames();
+        return true;
     },
 
-    read: async function(name) {
-        const doc = await DataRepository.getDoc(`${DATA_KEYS.KEY_DOC_PRE}${name}`);
-        return doc;
+    /**
+     * Legge il testo di un documento per nome.
+     *
+     * @param {string} name - Nome del documento.
+     * @returns {Promise<string|null>} Testo, o null.
+     */
+    read: async function (name) {
+        if (typeof name !== "string" || name.length === 0) {
+            return null;
+        }
+        const kbId = await getKbId();
+        const sources = await listSources(kbId);
+        const found = sources.find(function (row) {
+            return row.name === name;
+        });
+        if (!found) {
+            return null;
+        }
+        const text = await readSource(kbId, found.sourceId);
+        return text;
     },
 
-    names: async function() {
-        await _init();
-        return _names;
+    /**
+     * Elenca i nomi dei documenti caricati.
+     *
+     * @returns {Promise<Array<string>>} Nomi ordinati.
+     */
+    names: async function () {
+        const names = await _refreshNames();
+        return names;
     },
 
-    name: async function(i) {
-        await _init();
+    /**
+     * Restituisce il nome del documento in posizione `i`.
+     *
+     * @param {number} i - Indice.
+     * @returns {Promise<string|null>} Nome, o null.
+     */
+    name: async function (i) {
+        await _refreshNames();
         const result = (i >= 0 && i < _names.length) ? _names[i] : null;
         return result;
     },
 
-    doc: async function(i) {
+    /**
+     * Legge il documento in posizione `i`.
+     *
+     * @param {number} i - Indice.
+     * @returns {Promise<string|null>} Testo, o null.
+     */
+    doc: async function (i) {
         const name = await DocsMgr.name(i);
         const result = name ? await DocsMgr.read(name) : null;
         return result;
     },
 
-    delete: async function(name) {
-        await _init();
-        const index = _names.indexOf(name);
-        if (index > -1) {
-            _names.splice(index, 1);
-            await DataRepository.saveSetting(DATA_KEYS.KEY_DOCS, JSON.stringify(_names));
-            await DataRepository.deleteDoc(`${DATA_KEYS.KEY_DOC_PRE}${name}`);
-            const deleted = true;
-            return deleted;
+    /**
+     * Cancella un documento (sorgente) e le pagine dipendenti.
+     *
+     * @param {string} name - Nome del documento.
+     * @returns {Promise<boolean>} Vero a cancellazione avvenuta.
+     */
+    delete: async function (name) {
+        const kbId = await getKbId();
+        const sources = await listSources(kbId);
+        const found = sources.find(function (row) {
+            return row.name === name;
+        });
+        if (!found) {
+            const missing = false;
+            return missing;
         }
-        const deleted = false;
-        return deleted;
+        const report = await deleteSource(kbId, found.sourceId);
+        await _refreshNames();
+        const done = report !== null;
+        return done;
     },
 
-    exists: async function(name) {
-        await _init();
-        return _names.includes(name);
+    /**
+     * Verifica se un documento esiste.
+     *
+     * @param {string} name - Nome del documento.
+     * @returns {Promise<boolean>} Vero se presente.
+     */
+    exists: async function (name) {
+        await _refreshNames();
+        const present = _names.includes(name);
+        return present;
     }
 };
+
+export { listSources, deleteSource };

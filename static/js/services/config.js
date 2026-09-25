@@ -1,5 +1,5 @@
 /**
- * config.js - Configurazione globale del sistema RagIndex.
+ * config.js - Configurazione globale del sistema WikiJS.
  * 
  * Centralizza le impostazioni di sviluppo e produzione.
  * 

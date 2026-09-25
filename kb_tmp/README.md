@@ -1,7 +1,7 @@
 # kb_tmp — Motore Knowledge Base WikiJS
 
 Codice JavaScript pronto per essere copiato in `static/js/` e sostituire il
-motore Knowledge Base di ragindex (`rag_engine.js`, `docs_mgr.js`,
+motore Knowledge Base dell'applicazione precedente (`rag_engine.js`, `docs_mgr.js`,
 `rag_worker.js`, `llm_prompts.js`) senza toccare interfaccia, stack LLM,
 chiavi API, uploader, LESS e login.
 
@@ -25,9 +25,9 @@ kb_tmp/
 │
 │   (colla host: vive allo stesso livello di kb/, importa solo verso il basso)
 ├── kb_ui_state.js               kbId attivo + marcatori UI (ph0_chunks, ph1_index, …)
-├── docs_mgr.js                  API documenti di ragindex → sorgenti KB
-├── rag_engine.js                creazione/interrogazione per app_ui (stessa API ragindex)
-└── llm_provider_adapter.js      adapter complete() sopra LlmProvider (ragindex)
+├── docs_mgr.js                  API documenti dell'applicazione → sorgenti KB
+├── rag_engine.js                creazione/interrogazione per app_ui (stessa API applicativa)
+└── llm_provider_adapter.js      adapter complete() sopra LlmProvider
 ```
 
 Regole rispettate:
@@ -40,7 +40,7 @@ Regole rispettate:
 
 ## Installazione
 
-Dalla root del progetto (che ha già `static/` copiato da ragindex):
+Dalla root del progetto (che ha già `static/`):
 
 ```bash
 cp -r kb_tmp/kb static/js/kb

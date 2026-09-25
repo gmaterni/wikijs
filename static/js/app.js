@@ -1,5 +1,5 @@
 /**
- * app.js - Entry point dell'applicazione RagIndex.
+ * app.js - Entry point dell'applicazione WikiJS.
  *
  * Inizializza e avvia l'applicazione coordinando i manager e la UI.
  * Implementa la gestione degli errori globale e l'inizializzazione del sender.
@@ -17,6 +17,10 @@ import { bindEventListener, showHtmlThread, wnds, Commands, TextInput, TextOutpu
 import { AppMgr } from "./app_mgr.js";
 import { WebId } from "./services/webuser_id.js";
 import { UaSender } from "./services/sender.js";
+import { ragEngine } from "./rag_engine.js";
+import { kbInit, addSource as kbAddSource, kbBuild, kbUpdate, kbQuery, kbStatus, kbExport, kbImport, kbLint } from "./kb/index.js";
+import { getKbId } from "./kb_ui_state.js";
+import { activateProviderAdapter, stopActiveClients } from "./llm_provider_adapter.js";
 
 import "./services/uadialog.js";
 
@@ -28,7 +32,7 @@ import "./services/uadialog.js";
 export const APP_VERSION = "0.2.1";
 
 /** @type {string} URL del worker per l'invio eventi. */
-const WORKER_URL = "https://ragindex.workerua.workers.dev";
+const WORKER_URL = "https://wwwanalyzer-backend.workerua.workers.dev";
 
 // Disabilitazione log non necessari
 // Scommentare la riga qui sotto per silenziare console.debug
@@ -95,6 +99,20 @@ const openAppAsync = async function () {
         // 2. Inizializzazione Core Applicativo
         await AppMgr.initApp();
 
+        // 2b. Motore WikiJS: adapter LLM, STOP condiviso e comandi console
+        activateProviderAdapter();
+        ragEngine.setStopHandler(stopActiveClients);
+        window.kbInit = kbInit;
+        window.kbAddSource = kbAddSource;
+        window.kbBuild = kbBuild;
+        window.kbUpdate = kbUpdate;
+        window.kbQuery = kbQuery;
+        window.kbStatus = kbStatus;
+        window.kbExport = kbExport;
+        window.kbImport = kbImport;
+        window.kbLint = kbLint;
+        window.kbGetId = getKbId;
+
         // 3. Configurazione Componenti Input/Output
         TextInput.init();
         TextInput._inputEl?.focus();
@@ -136,7 +154,7 @@ const openAppAsync = async function () {
         });
 
         // 8. Notifica apertura app
-        await UaSender.sendEventAsync("ragindex", "open");
+        await UaSender.sendEventAsync("wikijs", "open");
 
         console.info("openAppAsync: inizializzazione completata con successo.");
 

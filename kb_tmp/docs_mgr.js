@@ -1,7 +1,7 @@
 /**
  * docs_mgr.js - Gestore documenti della Knowledge Base attiva.
  *
- * Stessa API di ragindex (init/add/read/names/name/doc/delete/exists),
+ * API documenti invariata (init/add/read/names/name/doc/delete/exists),
  * ma i documenti sono le sorgenti del motore WikiJS: `add` registra una
  * sorgente, `delete` rimuove la sorgente e (se elaborata) le pagine che
  * dipendono solo da lei, in un'unica transazione.
@@ -14,8 +14,7 @@
 
 "use strict";
 
-import { addSource } from "./kb/build.js";
-import { listSources, readSource, deleteSource } from "./kb/sources.js";
+import { addSource, listSources, readSource, deleteSource } from "./kb/index.js";
 import { getKbId } from "./kb_ui_state.js";
 
 // Cache dei nomi, allineata a ogni operazione.

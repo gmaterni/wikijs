@@ -121,7 +121,7 @@ export const BackupMgr = {
             }
 
             const dateStr = new Date().toISOString().split("T")[0];
-            const fileName = `ragindex_${typeLabel}_${itemName}_${dateStr}.json`;
+            const fileName = `wikijs_${typeLabel}_${itemName}_${dateStr}.json`;
 
             _downloadFile(json, fileName);
             success = true;
@@ -151,9 +151,17 @@ export const BackupMgr = {
                 return empty;
             }
 
-            // Fail Fast: Validazione struttura KB
-            if (!data.chunks || !data.serializedIndex) {
-                await alert("Errore: Il file selezionato non è una Knowledge Base valida.");
+            // Fail Fast: validazione struttura KB.
+            // Formati accettati: record d'archivio del motore WikiJS
+            // (`kbBundle` o `bundle`) e bundle esportato diretto.
+            const bundle = data.kbBundle || data.bundle || null;
+            const isRawBundle = !bundle && Array.isArray(data.sources) && Array.isArray(data.pages) && Array.isArray(data.catalog);
+            if (!bundle && !isRawBundle) {
+                if (data.chunks || data.serializedIndex) {
+                    await alert("Errore: archivio in formato precedente non supportato. Ricreare la KB con «Crea» e archiviarla di nuovo.");
+                } else {
+                    await alert("Errore: Il file selezionato non è una Knowledge Base valida.");
+                }
                 const empty = null;
                 return empty;
             }
@@ -186,7 +194,18 @@ export const BackupMgr = {
                 }
             }
 
-            await idbMgr.create(key, data);
+            const bundleValue = bundle || data;
+            const sources = Array.isArray(bundleValue.sources) ? bundleValue.sources : [];
+            const pages = Array.isArray(bundleValue.pages) ? bundleValue.pages : [];
+            const record = data.kbBundle ? data : {
+                chunks: { sources: sources.length, pages: pages.length },
+                serializedIndex: "",
+                doclist: sources.map(function(row) { return row.name; }),
+                childchunks: {},
+                kbBundle: bundleValue,
+                kbId: ""
+            };
+            await idbMgr.create(key, record);
             importedName = sanitizedName;
 
         } catch (error) {

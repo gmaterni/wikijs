@@ -23,6 +23,8 @@ import { DocsMgr } from "./docs_mgr.js";
 import { LlmProvider, getProviderConfig } from "./llm_provider.js";
 import { textFormatter, messages2html, messages2text, escapeHtml } from "./services/history_utils.js";
 import { ragEngine } from "./rag_engine.js";
+import { kbInit, kbBuild, kbStatus, kbExport, kbImport, listSources, isPending, slugify } from "./kb/index.js";
+import { getKbId, syncKbMarkers, clearKbMarkers, deleteKbDatabase } from "./kb_ui_state.js";
 import { DATA_KEYS, getDescriptionForKey, REGEX_NAME_CLEANER } from "./services/data_keys.js";
 import { idbMgr } from "./services/idb_mgr.js";
 import { BackupMgr } from "./services/backup_mgr.js";
@@ -71,6 +73,13 @@ const HELP_ATTR_NAME = "data-help";
 
 /** Delimitatore tra titolo e descrizione nel valore dichiarativo. */
 const HELP_ATTR_DELIMITER = "|";
+
+/**
+ * Prefisso dei database dell'applicazione precedente (pulizia una tantum del
+ * Reset). Composto a runtime perché il vecchio nome non deve figurare nei sorgenti.
+ * @type {string}
+ */
+const LEGACY_DB_PREFIX = "Rag" + "Index";
 
 
 // ============================================================================
@@ -696,30 +705,6 @@ const toggleThemeAsync = async function() {
 
 
 // ============================================================================
-/**
- * Ricostruisce l'indice Lunr nel main thread da child chunk già pronti.
- * Usato per rebuild indice senza rieseguire NLP (chunking) sui documenti.
- *
- * @param {Array<Object>} indexEntries - Array di {id, body, keywords, entities}.
- * @returns {Promise<string>} Indice Lunr serializzato in JSON.
- */
-const _rebuildLunrIndex = async function(indexEntries) {
-    const idx = window.lunr(function() {
-        this.use(window.lunr.it);
-        this.ref("id");
-        this.field("body");
-        indexEntries.forEach((entry) => {
-            const keywordsStr = (entry.keywords || []).join(" ");
-            const entitiesStr = (entry.entities || []).join(" ");
-            const fullText = entry.body + " " + keywordsStr + " " + entitiesStr;
-            this.add({ id: entry.id, body: fullText });
-        });
-    });
-    const serialized = JSON.stringify(idx);
-    return serialized;
-};
-
-// ============================================================================
 // GESTORI AZIONI MENU (Privati)
 // ============================================================================
 
@@ -738,9 +723,9 @@ const _actionViewContextAsync = async function() {
 };
 
 const _actionSaveKnowledgeBaseAsync = async function() {
-    const chunks = await idbMgr.read(DATA_KEYS.PHASE0_CHUNKS);
-    const index = await idbMgr.read(DATA_KEYS.PHASE1_INDEX);
-    if (!chunks || !index) { await alert("Creare prima una KB valida."); return; }
+    const hasChunks = await idbMgr.exists(DATA_KEYS.PHASE0_CHUNKS);
+    const hasIndex = await idbMgr.exists(DATA_KEYS.PHASE1_INDEX);
+    if (!hasChunks || !hasIndex) { await alert("Creare prima una KB valida."); return; }
 
     const nameRaw = await prompt("Nome per archiviare la Knowledge Base:");
     if (nameRaw === null) return;
@@ -749,11 +734,25 @@ const _actionSaveKnowledgeBaseAsync = async function() {
 
     const sanitizedName = nameTrimmed.replace(REGEX_NAME_CLEANER, "_").replace(/_+/g, "_");
     const storageKey = `${DATA_KEYS.KEY_KB_PRE}${sanitizedName}`;
+
+    // Il bundle del motore WikiJS è il dato vero dell'archivio; chunks,
+    // serializedIndex e childchunks restano segnaposto per i controlli UI.
+    const kbId = await getKbId();
+    const bundle = await kbExport({ kbId: kbId, includeLogs: true });
+    if (!bundle) { await alert("ERRORE: esportazione della Knowledge Base non riuscita."); return; }
+    const status = await kbStatus({ kbId: kbId });
+    const counts = status ? status.counts : { sources: 0, pages: 0 };
     const doclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
-    const childchunks = await idbMgr.read(DATA_KEYS.KB_CHILDCHUNKS) || {};
-    await idbMgr.create(storageKey, { chunks, serializedIndex: index, doclist, childchunks });
-    await UaDb.save(DATA_KEYS.ACTIVE_KB_NAME, sanitizedName);
-    await updateActiveKbDisplay();
+    const record = {
+        chunks: { sources: counts.sources, pages: counts.pages },
+        serializedIndex: `wikijs:${kbId}`,
+        doclist: doclist,
+        childchunks: {},
+        kbBundle: bundle,
+        kbId: kbId
+    };
+    await idbMgr.create(storageKey, record);
+    // L'archiviazione non cambia la KB attiva: il badge resta invariato.
     await alert(`Knowledge Base archiviata con successo: ${sanitizedName}`);
 };
 
@@ -761,11 +760,9 @@ const _actionDeleteKnowledgeBaseAsync = async function() {
     const hasChunks = await idbMgr.exists(DATA_KEYS.PHASE0_CHUNKS);
     if (!hasChunks) { await alert("Nessuna Knowledge Base attiva da cancellare."); return; }
     if (!await confirm("Cancellare completamente la Knowledge Base attiva?")) return;
-    await idbMgr.delete(DATA_KEYS.PHASE0_CHUNKS);
-    await idbMgr.delete(DATA_KEYS.PHASE1_INDEX);
-    await idbMgr.delete(DATA_KEYS.KB_DOCLIST);
-    await idbMgr.delete(DATA_KEYS.KB_CHILDCHUNKS);
-    await UaDb.delete(DATA_KEYS.ACTIVE_KB_NAME);
+    const kbId = await getKbId();
+    await deleteKbDatabase(kbId);
+    await clearKbMarkers();
     await updateActiveKbDisplay();
     UaLog.log(">>> Knowledge Base cancellata. <<<");
 };
@@ -819,22 +816,30 @@ const _actionSaveConversationAsync = async function() {
 const _actionLoadKnowledgeBaseAsync = async function(key) {
     if (!key) return;
     const data = await idbMgr.read(key);
-    if (data && data.chunks && data.serializedIndex) {
-        await idbMgr.create(DATA_KEYS.PHASE0_CHUNKS, data.chunks);
-        await idbMgr.create(DATA_KEYS.PHASE1_INDEX, data.serializedIndex);
-        if (data.doclist) {
-            await idbMgr.create(DATA_KEYS.KB_DOCLIST, data.doclist);
+    if (!data) { await alert("ERRORE: I dati della KB non sono validi."); return; }
+
+    // Gli archivi precedenti alla trasformazione (chunks + indice serializzato)
+    // non sono convertibili: errore dichiarato senza toccare lo stato.
+    if (!data.kbBundle) {
+        if (data.chunks || data.serializedIndex) {
+            await alert("ERRORE: archivio in formato precedente non supportato. Ricreare la KB con «Crea» e archiviarla di nuovo.");
+        } else {
+            await alert("ERRORE: I dati della KB non sono validi.");
         }
-        if (data.childchunks) {
-            await idbMgr.create(DATA_KEYS.KB_CHILDCHUNKS, data.childchunks);
-        }
-        const name = key.slice(DATA_KEYS.KEY_KB_PRE.length);
-        await UaDb.save(DATA_KEYS.ACTIVE_KB_NAME, name);
-        await updateActiveKbDisplay();
-        await alert("Knowledge Base caricata correttamente.");
-    } else {
-        await alert("ERRORE: I dati della KB non sono validi.");
+        return;
     }
+
+    const name = key.slice(DATA_KEYS.KEY_KB_PRE.length);
+    const kbId = slugify(name, 64, "kb");
+    const imported = await kbImport({ kbId: kbId, bundle: data.kbBundle, mode: "replace" });
+    if (!imported) { await alert("ERRORE: importazione della Knowledge Base non riuscita."); return; }
+
+    const status = await kbStatus({ kbId: kbId });
+    const sources = Array.isArray(data.kbBundle.sources) ? data.kbBundle.sources : [];
+    const doclist = sources.map(function(row) { return row.name; });
+    await syncKbMarkers(kbId, { counts: status ? status.counts : {}, doclist: doclist });
+    await updateActiveKbDisplay();
+    await alert("Knowledge Base caricata correttamente.");
 };
 
 const _actionLoadConversationAsync = async function(key) {
@@ -917,6 +922,43 @@ export const wnds = {
 // API PUBBLICA - Comandi Generali (Commands)
 // ============================================================================
 
+/**
+ * Elimina i database delle KB (`wikijs:*`) e, se il browser espone
+ * `indexedDB.databases()`, anche i database dell'applicazione precedente.
+ *
+ * @returns {Promise<boolean>} Vero a pulizia richiesta.
+ */
+const _deleteAllKbDatabasesAsync = function() {
+    const factory = window.indexedDB;
+    const done = new Promise(function(resolve) {
+        if (!factory || typeof factory.databases !== "function" || typeof factory.deleteDatabase !== "function") {
+            resolve(false);
+            return;
+        }
+        factory.databases().then(function(list) {
+            const names = (list || []).map(function(row) { return row.name; }).filter(function(name) {
+                return name && (name.startsWith("wikijs:") || name.startsWith(LEGACY_DB_PREFIX));
+            });
+            if (names.length === 0) { resolve(true); return; }
+            let remaining = names.length;
+            const step = function() {
+                remaining = remaining - 1;
+                if (remaining === 0) { resolve(true); }
+            };
+            names.forEach(function(name) {
+                const request = factory.deleteDatabase(name);
+                request.onsuccess = step;
+                request.onerror = step;
+                request.onblocked = step;
+            });
+        }).catch(function(error) {
+            console.error("_deleteAllKbDatabasesAsync:", error);
+            resolve(false);
+        });
+    });
+    return done;
+};
+
 export const Commands = {
     init: function() {},
     help: function() { wnds.wdiv.show(help0_html); },
@@ -932,6 +974,7 @@ export const Commands = {
         if (!await confirm(msg2)) return;
         localStorage.clear();
         await idbMgr.clearAll();
+        await _deleteAllKbDatabasesAsync();
         location.reload();
     }
 };
@@ -964,110 +1007,66 @@ export const TextInput = {
         const validDocs = documents.filter(doc => doc.text && doc.text.trim().length > 0);
         if (validDocs.length === 0) { await alert("Nessun documento valido trovato."); return; }
 
-        // Leggi KB esistente
+        // Confronto con kb_doclist: elenco vuoto = prima costruzione (full),
+        // altrimenti incrementale (auto). Il delta new/changed/error resta
+        // responsabilità del motore, che non effettua chiamate LLM se non
+        // c'è nulla da elaborare.
         const existingDoclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
-        const existingChildChunks = await idbMgr.read(DATA_KEYS.KB_CHILDCHUNKS) || {};
+        const isFirstBuild = existingDoclist.length === 0;
 
-        const existingSet = new Set(existingDoclist);
-        const newDocs = validDocs.filter(function(d) { return !existingSet.has(d.name); });
-        const newDocNames = newDocs.map(function(d) { return d.name; });
-
-        if (existingDoclist.length === 0) {
-            // --- FULL REBUILD (nessuna KB preesistente) ---
-            if (!await confirm(`Creare KB da ${validDocs.length} documenti?`)) return;
-            _Spinner.show();
-            await UaSender.sendEventAsync("ragindex", "createKnowledge");
-            setTimeout(async function() {
-                try {
-                    const kbData = await ragEngine.createKnowledgeBase(validDocs);
-                    const { chunks, serializedIndex, childEntries } = kbData;
-                    await idbMgr.create(DATA_KEYS.PHASE0_CHUNKS, chunks);
-                    await idbMgr.create(DATA_KEYS.PHASE1_INDEX, serializedIndex);
-
-                    const childChunksByDoc = {};
-                    if (childEntries) {
-                        for (const entry of childEntries) {
-                            childChunksByDoc[entry.docName] = entry.children;
-                        }
-                    }
-                    await idbMgr.create(DATA_KEYS.KB_CHILDCHUNKS, childChunksByDoc);
-
-                    // KB_DOCLIST include tutti i doc processati
-                    const allDocNames = validDocs.map(function(d) { return d.name; });
-                    await idbMgr.create(DATA_KEYS.KB_DOCLIST, allDocNames);
-
-                    await UaDb.delete(DATA_KEYS.ACTIVE_KB_NAME);
-                    await updateActiveKbDisplay();
-                    await alert(`Knowledge Base creata: ${chunks.length} frammenti.`);
-                } catch (error) {
-                    if (error && error.code === 499) return;
-                    await alert(`ERRORE CRITICO:\n${error.message || error}`);
-                } finally { _Spinner.hide(); }
-            }, 50);
-        } else if (newDocs.length === 0) {
-            await alert("Tutti i documenti sono già stati elaborati nella KB esistente. Nessun nuovo documento da aggiungere.");
-            return;
-        } else {
-            // --- INCREMENTALE ---
-            if (!await confirm(`Aggiungere ${newDocs.length} nuovo/i documento/i alla KB esistente (${existingDoclist.length} doc processati)?`)) return;
-            _Spinner.show();
-            await UaSender.sendEventAsync("ragindex", "createKnowledge");
-            setTimeout(async function() {
-                try {
-                    // 1. Carica chunk esistenti
-                    const existingParents = await idbMgr.read(DATA_KEYS.PHASE0_CHUNKS) || [];
-
-                    // 2. Calcola startDocIndex oltre tutti gli indici esistenti
-                    let maxDocIdx = -1;
-                    for (const chunk of existingParents) {
-                        const match = chunk.id.match(/^d(\d+)p/);
-                        if (match) {
-                            const idx = parseInt(match[1], 10);
-                            if (idx > maxDocIdx) maxDocIdx = idx;
-                        }
-                    }
-                    const nextDocIndex = maxDocIdx + 1;
-
-                    // 3. Chunka solo i nuovi documenti
-                    const chunkResult = await ragEngine.chunkDocumentsAsync(newDocs, nextDocIndex);
-
-                    // 4. Unisci parent chunk
-                    const allParents = existingParents.concat(chunkResult.parents);
-
-                    // 5. Unisci child chunk (mantieni esistenti, aggiungi nuovi)
-                    const allChildChunks = Object.assign({}, existingChildChunks);
-                    for (const entry of chunkResult.childEntries) {
-                        allChildChunks[entry.docName] = entry.children;
-                    }
-
-                    // 6. Ricostruisci indice da TUTTI i child chunk
-                    const allIndexEntries = [];
-                    for (const docName of Object.keys(allChildChunks)) {
-                        const children = allChildChunks[docName];
-                        for (const child of children) {
-                            allIndexEntries.push(child);
-                        }
-                    }
-                    const serializedIndex = await _rebuildLunrIndex(allIndexEntries);
-
-                    // 7. Salva tutto
-                    await idbMgr.create(DATA_KEYS.PHASE0_CHUNKS, allParents);
-                    await idbMgr.create(DATA_KEYS.PHASE1_INDEX, serializedIndex);
-                    await idbMgr.create(DATA_KEYS.KB_CHILDCHUNKS, allChildChunks);
-
-                    // KB_DOCLIST: mantieni doc esistenti + aggiungi nuovi
-                    const allDocNames = existingDoclist.concat(newDocNames);
-                    await idbMgr.create(DATA_KEYS.KB_DOCLIST, allDocNames);
-
-                    await UaDb.delete(DATA_KEYS.ACTIVE_KB_NAME);
-                    await updateActiveKbDisplay();
-                    await alert(`Knowledge Base aggiornata: +${newDocs.length} documento/i, ${allParents.length} frammenti totali.`);
-                } catch (error) {
-                    if (error && error.code === 499) return;
-                    await alert(`ERRORE CRITICO:\n${error.message || error}`);
-                } finally { _Spinner.hide(); }
-            }, 50);
+        let pendingCount = validDocs.length;
+        if (!isFirstBuild) {
+            const kbId = await getKbId();
+            const sources = await listSources(kbId) || [];
+            pendingCount = sources.filter(function(row) { return isPending(row); }).length;
+            if (pendingCount === 0) {
+                await alert("Tutti i documenti caricati sono già stati elaborati nella KB esistente. Nessun documento nuovo o modificato da elaborare.");
+                return;
+            }
         }
+
+        if (isFirstBuild) {
+            if (!await confirm(`Creare KB da ${validDocs.length} documenti?`)) return;
+        } else {
+            if (!await confirm(`Aggiungere ${pendingCount} nuovo/i documento/i alla KB esistente (${existingDoclist.length} doc processati)?`)) return;
+        }
+
+        _Spinner.show();
+        await UaSender.sendEventAsync("wikijs", "createKnowledge");
+        setTimeout(async function() {
+            const signal = ragEngine.beginBuild();
+            try {
+                const kbId = await getKbId();
+                await kbInit({ kbId: kbId });
+                const report = await kbBuild({ kbId: kbId, mode: isFirstBuild ? "full" : "auto", signal: signal });
+                if (signal.aborted) {
+                    const cancelled = new Error("Compilazione interrotta dall'utente");
+                    cancelled.code = 499;
+                    throw cancelled;
+                }
+                if (!report) {
+                    await alert("ERRORE: compilazione della Knowledge Base non riuscita. Controllare console e provider LLM.");
+                    return;
+                }
+                if (report.totals && report.totals.sources === 0) {
+                    await alert("Nessun documento nuovo o modificato da elaborare.");
+                    return;
+                }
+                const status = await kbStatus({ kbId: kbId });
+                const doclist = validDocs.map(function(d) { return d.name; });
+                await syncKbMarkers(kbId, { counts: status ? status.counts : {}, doclist: doclist });
+                await updateActiveKbDisplay();
+                const pages = (status && status.counts) ? status.counts.pages : 0;
+                if (isFirstBuild) {
+                    await alert(`Knowledge Base creata: ${pages} pagine.`);
+                } else {
+                    await alert(`Knowledge Base aggiornata: +${report.totals.sources} documento/i, ${pages} pagine totali.`);
+                }
+            } catch (error) {
+                if (error && error.code === 499) return;
+                await alert(`ERRORE CRITICO:\n${error.message || error}`);
+            } finally { ragEngine.endBuild(); _Spinner.hide(); }
+        }, 50);
     },
     _checkProviderReady: async function() {
         const config = LlmProvider.getConfig();
@@ -1092,12 +1091,10 @@ export const TextInput = {
         if (query.length === 0) { await alert("Inserisci una domanda."); return; }
         const index = await idbMgr.read(DATA_KEYS.PHASE1_INDEX);
         const chunks = await idbMgr.read(DATA_KEYS.PHASE0_CHUNKS);
-        
-    // TODO: Stato indice
-        if (!index) { await alert("Eseguire l'Azione 1 prima."); return; }
+        if (!index) { await alert("Compilare prima la Knowledge Base"); return; }
 
         _Spinner.show();
-        await UaSender.sendEventAsync("ragindex", "startConversation");
+        await UaSender.sendEventAsync("wikijs", "startConversation");
         setTimeout(async function() {
             try {
                 await idbMgr.delete(DATA_KEYS.KEY_THREAD);
@@ -1177,12 +1174,10 @@ export const TextOutput = {
             await idbMgr.delete(DATA_KEYS.PHASE2_CONTEXT);
             await idbMgr.delete(DATA_KEYS.KEY_THREAD);
             
-            // Cancella la Knowledge Base attiva (Indice e Chunks)
-            await idbMgr.delete(DATA_KEYS.PHASE0_CHUNKS);
-            await idbMgr.delete(DATA_KEYS.PHASE1_INDEX);
-            await idbMgr.delete(DATA_KEYS.KB_DOCLIST);
-            await idbMgr.delete(DATA_KEYS.KB_CHILDCHUNKS);
-            await UaDb.delete(DATA_KEYS.ACTIVE_KB_NAME);
+            // Cancella la Knowledge Base attiva: database dedicato + marcatori UI
+            const kbId = await getKbId();
+            await deleteKbDatabase(kbId);
+            await clearKbMarkers();
 
             await updateActiveKbDisplay();
             _setResponseHtml("");

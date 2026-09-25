@@ -17,7 +17,7 @@ import { DISABLE_LOGIN_ON_LOCAL, LOCAL_USER_ID, isLocalEnvironment } from './con
 /**
  * Costante per il valore di fallback (guest).
  */
-const GUEST_USER_ID = "ragindex_guest";
+const GUEST_USER_ID = "wikijs_guest";
 
 export const WebId = (function() {
     const storageKey = DATA_KEYS.KEY_WEB_ID;

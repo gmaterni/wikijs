@@ -3,10 +3,10 @@
 Versione 0.1.0. Dettagli di design in `docs/`: `architettura-knowledge-base.md`,
 `generazione-estensione-knowledge-base.md`, `workflow-query.md`.
 
-L'interfaccia (barra, menu laterale, finestre, stile LESS) è la stessa di
-ragindex: cambiano solo il motore di knowledge base (WikiJS) e il workflow di
-query. I comandi con gli stessi nomi di ragindex fanno l'operazione equivalente
-sulla KB WikiJS.
+L'interfaccia (barra, menu laterale, finestre, stile LESS) è la stessa
+dell'applicazione precedente: cambiano solo il motore di knowledge base (WikiJS)
+e il workflow di query. I comandi con gli stessi nomi fanno l'operazione
+equivalente sulla KB WikiJS.
 
 ## Avvio
 
@@ -17,25 +17,27 @@ con `file://` è bloccata dai browser per i moduli ES e per il caricamento dei `
 Le API sono anche in console: `kbInit`, `kbAddSource`, `kbBuild`, `kbUpdate`,
 `kbQuery`, `kbStatus`, `kbExport`, `kbImport`, `kbLint`, `kbGetId`.
 
-La KB attiva è scelta in `localStorage` (`wikijs.kbId`, default `demo`); per
-lavorare su più KB si usa la coppia Archivia/Carica (bundle JSON). L'LLM si
-configura dal pulsante **LLM** nella barra in alto (albero provider/modelli)
-o dalla sezione **LLM** del menu.
+La KB attiva è registrata nello stato applicativo in IndexedDB/Dexie
+(`active_kb` nel database `wikijs_app_<userId>`, default `demo`); per lavorare
+su più KB si usa la coppia Archivia/Carica (bundle JSON). L'LLM si configura
+dal pulsante **LLM** nella barra in alto (albero provider/modelli) o dalla
+sezione **LLM** del menu.
 
 I client (`gemini`, `mistral`, `groq`, `openrouter`, `huggingface` in
 `static/js/llmclient/`) e il catalogo modelli (`static/data/models/*.txt`)
-sono riusati verbatim da ragindex. Le chiavi di default (`static/data/api_x.json`,
-offuscate) vengono seminate al primo avvio in IndexedDB (`wikijs:llm`, chiave
-attiva per provider come in ragindex); ogni provider ammette più chiavi
-(aggiungi/attiva/elimina da "Gestisci API Key", solo i nomi in chiaro). La
-selezione provider/modello resta in `localStorage` (`wikijs.llm`). "Aggiorna LLM"
-scopre i modelli remoti (`static/js/llmlist/`), li vota con probe e li persiste
-in `wikijs:llm` (store `discovered`/`selected`); `cerebras`/`siliconflow` sono
-esclusi (client orfani fuori registry, senza catalogo). Le chiamate ritentano
-3 volte su `408,500,502,503,504` (mai su `429`), onorano `signal` e propagano
-l'`usage` reale. In alternativa l'adapter va iniettato dall'ospite
-(`window.WikiJsLlm.complete` oppure `setAdapter` da console); senza LLM restano
-attivi `offline` e selezione locale.
+sono quelli dell'applicazione precedente, senza modifiche. Le chiavi di
+default (`static/data/api_x.json`, offuscate) vengono seminate al primo avvio
+in `wikijs_app_<userId>` (store `settings`, chiave attiva per provider); ogni
+provider ammette più chiavi (aggiungi/attiva/elimina da "Gestisci API Key",
+solo i nomi in chiaro). La selezione provider/modello resta in
+`wikijs_app_<userId>` (chiave `llm_provider`). "Aggiorna LLM" scopre i modelli
+remoti (`static/js/llmlist/`), li vota con probe e li persiste in
+`wikijs_llm_<userId>` (store `discovered-models`/`selected-models`);
+`cerebras`/`siliconflow` sono esclusi (client orfani fuori registry, senza
+catalogo). Le chiamate ritentano 3 volte su `408,500,502,503,504` (mai su
+`429`), onorano `signal` e propagano l'`usage` reale. In alternativa l'adapter
+va iniettato dall'ospite (`window.WikiJsLlm.complete` oppure `setAdapter` da
+console); senza LLM restano attivi `offline` e selezione locale.
 
 ## Menu laterale
 
@@ -80,8 +82,8 @@ mostra la KB attiva e il badge LLM mostra `provider/modello` (o `LLM: ospite`).
 |---|---|
 | Cancella Input (cestino) | Svuota la casella di domanda. |
 | Copia Output | Copia il testo dell'output negli appunti. |
-| Avvia (giallo) | Nuova conversazione: `kbQuery({ kbId, question, mode: "llm" })`. |
-| Continua (verde) | Prosegue la conversazione corrente (stessa pipeline; la wiki risponde con citazioni `[[slug]]`). |
+| Avvia (giallo) | Nuova conversazione: `kbQuery({ kbId, question, mode: "llm" })`, contesto salvato per «Visualizza Contesto». |
+| Continua (verde) | Prosegue la conversazione: pipeline stateless, ogni invio riesegue la query con l'ultimo messaggio utente (citazioni `[[slug]]`). |
 | Invio | Come Continua (`Shift+Invio` va a capo). |
 
 ## Parametri principali (`meta.params`)
@@ -100,6 +102,9 @@ Sovrascrivibili in `kbInit({ kbId, params })`.
 - Contraddizioni in append, mai cancellazioni; pagine in quarantena escluse dalle query.
 - Oltre `catalogTokenBudget` la query usa il percorso a due livelli (3 chiamate, dichiarate).
 - "Cancella Contesto/Conversazione" agiscono sulla vista (stato UI in
-  `localStorage`): `outputs` e `logs` restano append-only nel database, come
-  richiesto dall'invariante I6.
+  `wikijs_app_<userId>`): `outputs` e `logs` restano append-only nel database,
+  come richiesto dall'invariante I6.
+- Eventi d'uso: inviati con nome applicazione `wikijs` all'endpoint
+  `https://wwwanalyzer-backend.workerua.workers.dev` (percorso `/api/analytics`);
+  l'invio è disattivato in ambiente locale.
 - Ogni comando documentato qui è verificato dalla matrice AC1–AC8 (adapter mock).

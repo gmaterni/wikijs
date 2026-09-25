@@ -17,7 +17,7 @@ import { WebId } from "./webuser_id.js";
  * tra account diversi sullo stesso browser.
  */
 const userId = WebId.get();
-const dbInstance = new Dexie(`RagIndexDB_${userId}`);
+const dbInstance = new Dexie(`wikijs_app_${userId}`);
 
 dbInstance.version(2).stores({
     kvStore: "id",

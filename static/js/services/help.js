@@ -15,7 +15,7 @@
  */
 export const help0_html = `
 <div class="text">
-    <p class="center help-title">Elenco Comandi RagIndex</p>
+    <p class="center help-title">Elenco Comandi WikiJS</p>
 
     <p class="center help-subtitle">
         Passa il mouse su ogni comando per un aiuto contestuale.

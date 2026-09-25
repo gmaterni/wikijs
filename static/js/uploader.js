@@ -1,7 +1,7 @@
 /**
  * @fileoverview uploader.js - Upload documenti
  * @description Gestisce l'upload di documenti (TXT, PDF, DOCX).
- *              Modulo specifico dell'applicazione RagIndex.
+ *              Modulo specifico dell'applicazione WikiJS.
  * @module uploader
  */
 "use strict";
