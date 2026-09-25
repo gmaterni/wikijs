@@ -464,7 +464,7 @@ const runBuildJob = async function (db, opts, mode) {
         const entry = { ts: finished, type: "build", refs: { jobId: job.jobId }, summary: "build " + status, details: { totals: totals } };
         await storePut(stores.logs, entry);
     });
-    const report = { jobId: job.jobId, mode: mode, durationMs: finished - started, sources: perSource, totals: totals, notes: notes };
+    const report = { jobId: job.jobId, mode: mode, status: status, error: error, durationMs: finished - started, sources: perSource, totals: totals, notes: notes };
     return report;
 };
 

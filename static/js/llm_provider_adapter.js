@@ -17,6 +17,7 @@
 import { setAdapter } from "./kb/index.js";
 import { LlmProvider } from "./llm_provider.js";
 import { createLlmPayload, toTextContent } from "./llmclient/index.js";
+import { UaLog } from "./services/ualog3.js";
 
 // Timeout delle chiamate ai provider, in secondi (come nello stack LLM).
 const REQUEST_TIMEOUT = 60;
@@ -150,6 +151,32 @@ const _failure = function (type, code, message) {
 };
 
 /**
+ * Etichetta provider/modello per i log applicativi (mai la chiave API).
+ *
+ * @param {string} provider - Provider attivo.
+ * @param {string} model - Modello attivo.
+ * @returns {string} Etichetta `provider/modello`.
+ */
+const _providerLabel = function (provider, model) {
+    const label = String(provider) + "/" + String(model);
+    return label;
+};
+
+/**
+ * Scrive una riga nel registro applicativo, senza interrompere la chiamata.
+ *
+ * @param {string} text - Messaggio da mostrare.
+ * @returns {void}
+ */
+const _log = function (text) {
+    try {
+        UaLog.log(text);
+    } catch (error) {
+        console.error("_log:", error);
+    }
+};
+
+/**
  * Calcola l'attesa del prossimo tentativo con backoff esponenziale e jitter.
  *
  * @param {number} attempt - Numero del tentativo appena fallito (1-based).
@@ -248,6 +275,7 @@ const stopActiveClients = function () {
  * Sul rate limit (429) applica spaziatura adattiva e backoff crescente
  * fino a `MAX_RETRIES`; a esaurimento restituisce l'errore strutturato
  * al chiamante, che può fermare il job invece di moltiplicare le chiamate.
+ * Ogni richiesta e ogni attesa sono riportate in `UaLog` (mai la chiave).
  *
  * @param {object} req - Richiesta `{ purpose, messages, temperature?, maxTokens?, signal? }`.
  * @returns {Promise<object>} `{ text, usage }` in caso di successo, `{ error }` in caso di guasto.
@@ -255,28 +283,35 @@ const stopActiveClients = function () {
 const complete = async function (req) {
     if (!req || typeof req !== "object" || !Array.isArray(req.messages) || req.messages.length === 0) {
         console.error("complete: richiesta non valida");
+        _log("LLM · richiesta non valida");
         const invalidRequest = _failure("InvalidRequest", null, "richiesta non valida");
         return invalidRequest;
     }
     if (req.signal && req.signal.aborted) {
         console.error("complete: richiesta abortita");
+        _log("LLM · richiesta interrotta dall'utente");
         const abortedBeforeStart = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
         return abortedBeforeStart;
     }
     const config = LlmProvider.getConfig();
     if (!config || !config.provider || !config.model) {
         console.error("complete: provider non configurato");
+        _log("LLM · provider non configurato");
         const noConfig = _failure("ConfigurationError", null, "provider non configurato");
         return noConfig;
     }
     const client = await LlmProvider.getClientFor(config.provider, config.model);
     if (!client) {
         console.error("complete: client non disponibile");
+        _log("LLM · client non disponibile");
         const noClient = _failure("ClientError", null, "client non disponibile");
         return noClient;
     }
+    const label = _providerLabel(config.provider, config.model);
+    const purpose = req.purpose ? String(req.purpose) : "?";
     const payload = createLlmPayload(config.model, req.messages, { temperature: req.temperature, max_tokens: req.maxTokens });
     let outcome = null;
+    let usage = {};
     let attempt = 0;
     _activeClients.add(client);
     try {
@@ -284,18 +319,27 @@ const complete = async function (req) {
             attempt = attempt + 1;
             if (req.signal && req.signal.aborted) {
                 console.error("complete: richiesta abortita");
+                _log("LLM · richiesta interrotta dall'utente");
                 const abortedInLoop = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
                 return abortedInLoop;
             }
             const slot = await _waitForSlot(req.signal || null);
             if (!slot) {
                 console.error("complete: richiesta abortita");
+                _log("LLM · richiesta interrotta dall'utente");
                 const abortedInWait = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
                 return abortedInWait;
             }
+            const attemptLabel = String(attempt) + "/" + String(MAX_RETRIES);
+            _log("LLM · " + label + " · " + purpose + " · tentativo " + attemptLabel);
+            const started = Date.now();
             outcome = await client.sendRequest(payload, REQUEST_TIMEOUT);
+            const elapsedMs = Date.now() - started;
             if (outcome && outcome.ok === true) {
+                usage = _extractUsage(outcome.response);
                 _decaySpacing();
+                const tokens = String(usage.inputTokens || 0) + "/" + String(usage.outputTokens || 0);
+                _log("LLM · ok · " + purpose + " · " + label + " · " + String(elapsedMs) + " ms · token " + tokens);
                 break;
             }
             const providerError = outcome ? outcome.error : null;
@@ -309,9 +353,12 @@ const complete = async function (req) {
                     break;
                 }
                 const rateDelay = retryAfterMs !== null ? retryAfterMs : _backoffDelay(attempt);
+                const rateSeconds = String(Math.round(rateDelay / 1000));
+                _log("LLM · 429 · quota superata · attendo " + rateSeconds + " s");
                 const waitedRate = await _sleep(rateDelay, req.signal || null);
                 if (!waitedRate) {
                     console.error("complete: richiesta abortita");
+                    _log("LLM · richiesta interrotta dall'utente");
                     const abortedInBackoff = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
                     return abortedInBackoff;
                 }
@@ -322,9 +369,13 @@ const complete = async function (req) {
                 break;
             }
             const delay = RETRY_DELAYS[attempt - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
+            const errorCode = providerError && typeof providerError.code === "number" ? String(providerError.code) : "errore";
+            const delaySeconds = String(Math.round(delay / 1000));
+            _log("LLM · " + errorCode + " · riprovo tra " + delaySeconds + " s");
             const waited = await _sleep(delay, req.signal || null);
             if (!waited) {
                 console.error("complete: richiesta abortita");
+                _log("LLM · richiesta interrotta dall'utente");
                 const abortedInRetry = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
                 return abortedInRetry;
             }
@@ -332,6 +383,7 @@ const complete = async function (req) {
     } catch (error) {
         console.error("complete:", error);
         const message = error && error.message ? error.message : "eccezione client";
+        _log("LLM · eccezione · " + message);
         const thrown = _failure("AdapterError", null, message);
         return thrown;
     } finally {
@@ -345,16 +397,17 @@ const complete = async function (req) {
         const retryAfterMs = _retryAfterMs(outcome);
         const codeLabel = code === null ? "" : String(code) + " ";
         console.error("complete: " + codeLabel + message);
+        _log("LLM · errore · " + codeLabel + message);
         const failed = { error: { type: type, code: code, message: message, retryAfterMs: retryAfterMs } };
         return failed;
     }
     const text = toTextContent(outcome.data);
     if (typeof text !== "string" || text.length === 0) {
         console.error("complete: risposta vuota dal provider");
+        _log("LLM · risposta vuota dal provider");
         const emptyResponse = _failure("EmptyResponse", null, "risposta vuota dal provider");
         return emptyResponse;
     }
-    const usage = _extractUsage(outcome.response);
     const result = { text: text, usage: usage };
     return result;
 };

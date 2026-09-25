@@ -104,7 +104,7 @@ Dipendenze interne al motore: `index → {api, adapter, mock, sources, params}`;
 |---|---|---|---|
 | `kbInit` | `{ kbId, params? }` | `{ kbId, created, schemaVersion }` | `null` se `kbId` non valido |
 | `addSource` | `{ kbId, name, mime?, text }` | record sorgente + `changed:boolean` | `null` su argomenti non validi |
-| `kbBuild` | `{ kbId, sourceIds?, mode?:"auto"\|"full"\|"update", budget?, onProgress?, signal?, resumeJobId?, adapter? }` | `{ jobId, mode, durationMs, sources[], totals{sources,pagesCreated,pagesUpdated,calls,inputTokens,outputTokens}, notes[] }` | `null` se niente da fare o `kbId` invalido |
+| `kbBuild` | `{ kbId, sourceIds?, mode?:"auto"\|"full"\|"update", budget?, onProgress?, signal?, resumeJobId?, adapter? }` | `{ jobId, mode, status, error, durationMs, sources[], totals{sources,pagesCreated,pagesUpdated,calls,inputTokens,outputTokens}, notes[] }` (`status:"error"` con `error:"rate_limited"` se la quota LLM si esaurisce) | `null` se niente da fare o `kbId` invalido |
 | `kbQuery` | `{ kbId, question, mode?:"llm"\|"llm-min"\|"offline", budget?, onProgress?, signal?, adapter? }` | `{ outputId, answer, citations[{slug,quote,verified}], pagesUsed[], mode, missing, meta{calls,pagesConsidered,pagesLoaded} }` | `null` su errore; `offline/llm-min` senza adapter |
 | `kbStatus` | `{ kbId }` | `{ kbId, schemaVersion, counts{…}, openJobs, invariants[{id,ok,details}], redLinks[] }` | `null` su DB illeggibile |
 | `kbExport` | `{ kbId, includeLogs? }` | `{ meta, sources, pages, catalog, logs? }` | `null` su errore |

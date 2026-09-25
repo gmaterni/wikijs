@@ -37,7 +37,9 @@ remoti (`static/js/llmlist/`), li vota con probe e li persiste in
 catalogo). Le chiamate ritentano 3 volte su `408,500,502,503,504`; sul `429`
 applicano un backoff crescente con spaziatura adattiva e, se persiste,
 interrompono il job (`rate_limited`) invece di moltiplicare le richieste.
-Onorano `signal` e propagano l'`usage` reale. In alternativa l'adapter
+Onorano `signal` e propagano l'`usage` reale. Ogni richiesta LLM
+(provider/modello, purpose, tentativo, attese ed esito) è riportata in
+`UaLog`; in alternativa l'adapter
 va iniettato dall'ospite (`window.WikiJsLlm.complete` oppure `setAdapter` da
 console); senza LLM restano attivi `offline` e selezione locale.
 

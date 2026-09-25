@@ -1104,7 +1104,21 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
             await alert("Nessun documento nuovo o modificato da elaborare.");
             return;
         }
+        if (report.status === "error") {
+            const reason = report.error === "rate_limited" ? "quota LLM esaurita" : "budget LLM esaurito";
+            UaLog.log("Compilazione interrotta: " + reason + ".");
+            for (const note of report.notes) {
+                UaLog.log("KB: " + note);
+            }
+            await alert("Compilazione interrotta: " + reason + ".\nLe pagine già create sono salvate; riprovare più tardi o cambiare modello/provider.");
+            return;
+        }
+        for (const note of report.notes) {
+            UaLog.log("KB: " + note);
+        }
         const pages = await _syncKnowledgeMarkersAsync(kbId, validDocs);
+        const totalsLine = "Compilazione completata: " + String(report.totals.sources) + " sorgenti, " + String(report.totals.pagesCreated) + " pagine create, " + String(report.totals.pagesUpdated) + " aggiornate, " + String(report.totals.calls) + " chiamate LLM.";
+        UaLog.log(totalsLine);
         let message = "";
         if (isFirstBuild) {
             message = `Knowledge Base creata: ${pages} pagine.`;
