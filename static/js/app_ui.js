@@ -1066,14 +1066,18 @@ const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
 /**
  * Allinea i marcatori UI allo stato della KB e aggiorna il badge.
  *
+ * Il doclist elenca solo le sorgenti `ingested`: un documento elaborato a
+ * metà non risulta processato e resta pendente per la build successiva.
+ *
  * @param {string} kbId - Identificatore della KB.
- * @param {Array} validDocs - Documenti correnti `{ name, text }`.
  * @returns {Promise<number>} Numero di pagine della KB.
  */
-const _syncKnowledgeMarkersAsync = async function(kbId, validDocs) {
+const _syncKnowledgeMarkersAsync = async function(kbId) {
     const status = await kbStatus({ kbId: kbId });
     const counts = status ? status.counts : {};
-    const doclist = validDocs.map(function(doc) { return doc.name; });
+    const sources = await listSources(kbId) || [];
+    const ingested = sources.filter(function(row) { return row.status === "ingested"; });
+    const doclist = ingested.map(function(row) { return row.name; });
     await syncKbMarkers(kbId, { counts: counts, doclist: doclist });
     await updateActiveKbDisplay();
     const pages = counts.pages ? counts.pages : 0;
@@ -1083,16 +1087,20 @@ const _syncKnowledgeMarkersAsync = async function(kbId, validDocs) {
 /**
  * Esegue la compilazione della KB attiva e aggiorna marcatori e badge.
  *
- * @param {boolean} isFirstBuild - Vero alla prima costruzione (mode full).
- * @param {Array} validDocs - Documenti correnti `{ name, text }`.
+ * La build usa sempre `mode:"auto"`: su KB vuota equivale a `full`, ma non
+ * rielabora mai le sorgenti già `ingested`, anche dopo una build interrotta
+ * o fallita. `isFirstBuild` resta solo per i messaggi.
+ *
+ * @param {boolean} isFirstBuild - Vero alla prima costruzione.
  * @returns {Promise<void>} Al termine.
  */
-const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
+const _runKnowledgeBuildAsync = async function(isFirstBuild) {
     const signal = ragEngine.beginBuild();
+    let kbId = "";
     try {
-        const kbId = await getKbId();
+        kbId = await getKbId();
         await kbInit({ kbId: kbId });
-        const mode = isFirstBuild ? "full" : "auto";
+        const mode = "auto";
         const llmConfig = LlmProvider.getConfig();
         const modelWindowTokens = llmConfig && llmConfig.windowSize ? llmConfig.windowSize * MODEL_WINDOW_TOKENS_PER_K : 0;
         const onProgress = function (progress) {
@@ -1115,6 +1123,7 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
             UaLog.log("Suddivisione: " + String(report.chunking.chunkChars) + " caratteri per chunk, overlap " + String(report.chunking.chunkOverlapChars) + windowLabel);
         }
         if (report.totals && report.totals.sources === 0) {
+            await _syncKnowledgeMarkersAsync(kbId);
             await alert("Nessun documento nuovo o modificato da elaborare.");
             return;
         }
@@ -1124,13 +1133,14 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
             for (const note of report.notes) {
                 UaLog.log("KB: " + note);
             }
+            await _syncKnowledgeMarkersAsync(kbId);
             await alert("Compilazione interrotta: " + reason + ".\nLe pagine già create sono salvate; riprovare più tardi o cambiare modello/provider.");
             return;
         }
         for (const note of report.notes) {
             UaLog.log("KB: " + note);
         }
-        const pages = await _syncKnowledgeMarkersAsync(kbId, validDocs);
+        const pages = await _syncKnowledgeMarkersAsync(kbId);
         const totalsLine = "Compilazione completata: " + String(report.totals.sources) + " sorgenti, " + String(report.totals.pagesCreated) + " pagine create, " + String(report.totals.pagesUpdated) + " aggiornate, " + String(report.totals.calls) + " chiamate LLM.";
         UaLog.log(totalsLine);
         let message = "";
@@ -1141,7 +1151,12 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
         }
         await alert(message);
     } catch (error) {
-        if (error && error.code === 499) return;
+        if (error && error.code === 499) {
+            if (kbId) {
+                await _syncKnowledgeMarkersAsync(kbId);
+            }
+            return;
+        }
         const errorText = error.message || error;
         await alert(`ERRORE CRITICO:\n${errorText}`);
     } finally {
@@ -1179,7 +1194,7 @@ export const TextInput = {
         _Spinner.show();
         await UaSender.sendEventAsync("wikijs", "createKnowledge");
         setTimeout(async function() {
-            await _runKnowledgeBuildAsync(isFirstBuild, validDocs);
+            await _runKnowledgeBuildAsync(isFirstBuild);
         }, DEFERRED_START_MS);
     },
     _checkProviderReady: async function() {

@@ -212,11 +212,13 @@ restano quelli di ragindex: cambia solo la destinazione (sorgenti KB).
 ```
 TextInput.createKnowledgeAsync
   ├─ DocsMgr.names()/doc(i)                → sorgenti correnti
-  ├─ se kb_doclist vuoto → conferma → kbBuild(mode:"full")
-  ├─ altrimenti solo nuove → conferma → kbBuild(mode:"auto")
-  ├─ kbStatus → syncKbMarkers(kbId, {counts, doclist})
+  ├─ conferma (prima costruzione o delta)  → kbBuild(mode:"auto")
+  ├─ kbStatus/listSources → syncKbMarkers(kbId, {counts, doclist})
   └─ updateActiveKbDisplay()               → badge «KB: <kbId>»
 ```
+
+Il doclist dei marcatori elenca solo le sorgenti `ingested`: le build
+interrotte non marcano come processati i documenti elaborati a metà.
 
 Semantica (da `generazione-estensione-knowledge-base.md`): chunk
 deterministici da 8.000 a 40.000 caratteri (derivati dalla finestra del

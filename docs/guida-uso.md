@@ -46,7 +46,7 @@ console); senza LLM restano attivi `offline` e selezione locale.
 ## Menu laterale
 
 ## knowldge Base
-| Crea || Estrae le pagine dalle sorgenti nuove o modificate. |
+| Crea || Estrae le pagine dalle sorgenti nuove o modificate, mai da quelle già completate. |
 | Cancella | Elimina il database della KB attiva. |
 | Archivia | Salva la KB corrente in un archivio locale con un nome scelto. |
 | Gestisci | — | Elenca, attiva, esporta o elimina le KB archiviate. |
