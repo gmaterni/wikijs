@@ -1,0 +1,50 @@
+{
+    "last_updated": "2026-09-08T00:00:00.000000",
+    "providers": {
+        "gemini": {
+            "keys": [
+                {
+                    "name": "ragquery",
+                    "key": "mLEAxPKgMeQsFqYcNp6ZJCqAAk0ypySqZDrlzLL",
+                    "notes": "giuseppe.materni"
+                }
+            ]
+        },
+        "openrouter": {
+            "keys": [
+                {
+                    "name": "260530",
+                    "key": "67-WV-qu-SSa0Sd0dlBSkkItlB0NgBSa2ld0CsakBdAaIIBIAatA0dNlugs222agBgsIuuIsd",
+                    "notes": "giuseppe.materni"
+                }
+            ]
+        },
+        "mistral": {
+            "keys": [
+                {
+                    "name": "260414",
+                    "key": "qyqMNcyMydvxWeEA6PCo8QkLe5boT7dA",
+                    "notes": "giuseppe.materni"
+                }
+            ]
+        },
+        "huggingface": {
+            "keys": [
+                {
+                    "name": "hf12",
+                    "key": "O2_hNDLVebH8EDgO7cPciTcVGZngmxI2Qf7Kz",
+                    "notes": "giuseppe.materni"
+                }
+            ]
+        },
+        "groq": {
+            "keys": [
+                {
+                    "name": "gmt2",
+                    "key": "o67_deaFoPWuNsV9xSs82bmNHQsPg0vU9HpaKqgqYBbpDwdWvJMKIMR0",
+                    "notes": "giuseppe.materni"
+                }
+            ]
+        }
+    }
+}

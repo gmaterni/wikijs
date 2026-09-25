@@ -1,0 +1,71 @@
+/** @format */
+@color1: #eb4204;
+// @color3: #cabd02;
+
+@color3: #4caf50;
+@color1: #f44336;
+#wnd-ualog {
+  box-sizing: border-box;
+  width: auto;
+  max-width: 60vw;
+  height: auto;
+  text-align: center;
+  padding: 2px;
+  margin: 2px 0 0 0;
+  background: #121212;
+  color: #ffffff;
+  font-size: 12px !important;
+  font-weight: normal;
+  border-radius: 9px;
+  border: 2px solid #01d30f;
+
+  button {
+    padding: 2px 5px 2px 5px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 10px;
+    color: #ffffff;
+
+    &:hover {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
+  button.close {
+    background: lighten(@color1, -10%);
+    &:hover {
+      background: lighten(@color1, 20%);
+      border-color: darken(@color1, 20%);
+    }
+  }
+  button.clear {
+    background: lighten(@color3, -10%);
+    &:hover {
+      background: lighten(@color3, 20%);
+      border-color: darken(@color3, 20%);
+    }
+  }
+
+  pre {
+    box-sizing: border-box;
+    width: auto;
+    min-width: 50vw;
+    max-height: 60vh;
+    text-align: left;
+    font-family: "Courier New", Courier, monospace;
+    padding: 2px;
+    margin: 2px 2px 2px 2px;
+    color: #ffffff;
+    background: #323232;
+    overflow: auto;
+    scrollbar-color: #23eb04 #454444;
+    scrollbar-width: auto;
+    white-space: pre;
+    // line-height: 1.4;
+    font-size: 8px !important;
+  }
+}
+#ualogmsg_ {
+  font-size: 8px !important;
+}

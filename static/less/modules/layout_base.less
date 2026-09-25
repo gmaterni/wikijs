@@ -1,0 +1,21 @@
+// ===================================================================
+//  LAYOUT BASE (Vertical Cage)
+//  Questa è la "gabbia" riutilizzabile per le tue future app.
+// ===================================================================
+
+div.container {
+  position: relative;
+  top: 0;
+  height: calc(100vh - 4.5vh); // Altezze calcolate per header fisso
+  padding-top: 4.5vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  div.item {
+    min-height: 50px;
+  }
+}

@@ -1,0 +1,4 @@
+allam-2-7b|4096|9|0.90
+openai/gpt-oss-120b|131072|8|2.05
+openai/gpt-oss-20b|131072|8|1.59
+openai/gpt-oss-safeguard-20b|131072|8|1.07

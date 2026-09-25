@@ -1,0 +1,218 @@
+/** @format */
+
+// ===================================================================
+//  SPINNER E MODAL OVERLAY
+// ===================================================================
+
+@spinner-bg: #323232;
+@spinner-border: 3px solid #ff3333;
+@spinner-radius: 8px;
+@spinner-shadow:
+  0 8px 24px rgba(0, 0, 0, 0.45),
+  0 2px 8px rgba(0, 0, 0, 0.3);
+@spinner-text: #e0e0e0;
+@spinner-font:
+  13px/1.5 "Inter",
+  "Segoe UI",
+  Roboto,
+  Arial,
+  sans-serif;
+@spinner-accent: #e82323;
+
+// Sfondo sfocato attivo durante lo spinner
+.spinner-bg {
+  filter: blur(1px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+// Spinner principale (con pulsante STOP)
+.spinner {
+  box-sizing: border-box;
+  position: fixed;
+  top: 60vh;
+  left: calc(@menu-width + 20vw);
+  width: auto;
+  height: auto;
+  z-index: @z-spinner;
+  background: transparent;
+  border: none;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  pointer-events: auto;
+  backdrop-filter: none;
+  padding: 4px;
+
+  .pulse-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: @spinner-accent;
+    box-shadow: 0 0 0 0 fade(@spinner-accent, 70%);
+    animation: pulse-spinner-icon 1.5s infinite;
+  }
+
+  .spinner-content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    background: @spinner-bg;
+    border: @spinner-border;
+    border-radius: @spinner-radius;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: @spinner-shadow;
+
+    &:hover {
+      border-color: #ffeb3b;
+      background: @spinner-bg;
+
+      .stop-message {
+        color: #ffeb3b;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .stop-message {
+    margin-top: 4px;
+    font: @spinner-font;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: @spinner-text;
+  }
+}
+
+// Spinner wait (con STOP: interrompe la procedura in corso)
+.spinner-wait {
+  box-sizing: border-box;
+  position: fixed;
+  top: 60vh;
+  left: calc(@menu-width + 20vw);
+  width: auto;
+  height: auto;
+  z-index: @z-spinner-wait;
+  background: transparent;
+  border: none;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  pointer-events: auto;
+  backdrop-filter: none;
+  padding: 4px;
+
+  .pulse-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: @spinner-accent;
+    box-shadow: 0 0 0 0 fade(@spinner-accent, 70%);
+    animation: pulse-spinner-icon 1.5s infinite;
+  }
+
+  .spinner-content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    background: @spinner-bg;
+    border: @spinner-border;
+    border-radius: @spinner-radius;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: @spinner-shadow;
+
+    &:hover {
+      border-color: #ffeb3b;
+      background: @spinner-bg;
+
+      .stop-message {
+        color: #ffeb3b;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .stop-message {
+    margin-top: 4px;
+    font: @spinner-font;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: @spinner-text;
+  }
+}
+
+// Attivazione display
+.show-spinner {
+  display: flex !important;
+
+  & ~ .menu-h {
+    .menu-icon,
+    .help,
+    .upload,
+    .provider-settings,
+    .btn-theme-toggle {
+      pointer-events: none !important;
+      opacity: 0.3 !important;
+    }
+  }
+}
+
+// Animazioni pulse
+@keyframes pulse-dark {
+  0% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@dark-color1, 70%);
+  }
+  70% {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 20px fade(@dark-color1, 0%);
+  }
+  100% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@dark-color1, 0%);
+  }
+}
+@keyframes pulse-light {
+  0% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@light-color1, 70%);
+  }
+  70% {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 20px fade(@light-color1, 0%);
+  }
+  100% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@light-color1, 0%);
+  }
+}
+
+@keyframes pulse-spinner-icon {
+  0% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@spinner-accent, 70%);
+  }
+  70% {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 20px fade(@spinner-accent, 0%);
+  }
+  100% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 fade(@spinner-accent, 0%);
+  }
+}

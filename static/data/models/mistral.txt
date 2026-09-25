@@ -1,0 +1,9 @@
+magistral-medium-latest|262144|9|3.67
+magistral-small-latest|262144|9|7.82
+ministral-14b-latest|262144|8|7.37
+ministral-8b-latest|262144|9|6.48
+ministral-3b-2512|131072|8|6.18
+mistral-large-latest|262144|9|11.29
+mistral-medium-latest|262144|9|3.35
+mistral-small-latest|262144|7|6.29
+mistral-vibe-cli-latest|262144|9|6.35

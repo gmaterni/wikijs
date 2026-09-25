@@ -1,0 +1,276 @@
+/** @format */
+
+@import "modules/variables.less";
+@import "modules/layout_base.less";
+@import "modules/layout.less";
+@import "modules/components.less";
+@import "modules/upload.less";
+@import "modules/tree.less";
+@import "modules/table.less";
+@import "modules/delete.less";
+@import "modules/actions.less";
+@import "modules/spinner.less";
+@import "modules/apikeys.less";
+@import "modules/help.less";
+@import "modules/app_ui.less";
+
+@menu-icon-fg: #aea7a7; // Definizione globale per evitare NameError
+
+html,
+body {
+  caret-color: transparent;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  caret-color: auto;
+}
+
+// ===================================================================
+//  5. COMPONENTI UI
+// ===================================================================
+
+// --- 5.1 Menu Orizzontale Superiore ---
+.menu-h {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 4.5vh;
+  z-index: @z-menu-h;
+  .menu-btn {
+    appearance: none;
+  }
+
+  // Mantenuto per specificità: batte .tt-right { position: relative }
+  .menu-icon {
+    position: absolute;
+  }
+
+  .head-wrapper {
+    position: absolute;
+    top: 0;
+    left: 5vw;
+    height: 4vh;
+    .active-model-display,
+    .help,
+    .upload,
+    .provider-settings,
+    .log {
+      box-sizing: border-box;
+      position: absolute;
+      top: 0;
+      margin: 2px 0;
+      padding: 2px 5px;
+      border: none;
+      cursor: pointer;
+      border-radius: 10%;
+      min-height: 4vh;
+      max-height: 4vh;
+    }
+    .help {
+      left: 1vw;
+      font-size: @fsize-out;
+      font-weight: 900;
+      z-index: @z-help;
+    }
+    .readme {
+      box-sizing: border-box;
+      position: absolute;
+      top: 0;
+      left: 7vw;
+      margin: 2px 0;
+      padding: 2px 5px;
+      border: none;
+      cursor: pointer;
+      min-height: 4vh;
+      max-height: 4vh;
+      font-size: @fsize-out;
+      font-weight: 900;
+      background: transparent;
+      z-index: @z-help;
+    }
+    .app-version {
+      box-sizing: border-box;
+      position: absolute;
+      top: 0;
+      left: 15vw;
+      margin: 2px 0;
+      padding: 2px 5px;
+      min-height: 4vh;
+      max-height: 4vh;
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      font-size: 13px;
+      color: #ff8c00;
+      white-space: nowrap;
+    }
+    .upload {
+      left: 21vw;
+      .icon {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2px;
+        fill: none;
+      }
+    }
+    .active-kb-display {
+      box-sizing: border-box;
+      position: absolute;
+      top: 0;
+      left: 26vw;
+      margin: 2px 0;
+      padding: 2px 5px;
+      min-height: 4vh;
+      max-height: 4vh;
+      min-width: 8vw;
+      max-width: 12vw;
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      text-transform: lowercase;
+      font-size: @fsize-out;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .provider-settings {
+      left: 46vw;
+      transition: background-color 0.3s ease;
+      &:hover {
+        background-color: fade(@dark-color2, 40%) !important;
+        box-shadow: 0 0 8px fade(@dark-color2, 50%);
+      }
+    }
+    .active-model-display {
+      left: 51vw;
+      font-size: @fsize-out;
+      font-style: italic;
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 28vw;
+    }
+    .log {
+      font-size: @fsize-log;
+      left: 83vw;
+      z-index: @z-menu-h;
+    }
+  }
+  .btn-theme-toggle {
+    box-sizing: border-box;
+    position: absolute;
+    top: 0.25vh;
+    right: 1vw;
+    height: 4vh;
+    background: inherit;
+    z-index: @z-menu-h-controls;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+    }
+  }
+}
+
+// --- 5.2 Menu Laterale ---
+// .menu-box definito in modules/components.less
+.menu-open {
+  .container {
+    margin-left: @menu-width;
+  }
+  .menu-box {
+    left: 0 !important;
+  }
+}
+
+// Finestra Log sopra tutto
+#wnd-ualog {
+  z-index: @z-log-panel !important;
+}
+
+.item.item2 {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  position: relative;
+  z-index: @z-item2;
+}
+
+.input-context-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 0 0.5vw;
+
+  #btn-edit-last-fixed,
+  .clear-input,
+  #btn-copy-output {
+    box-sizing: border-box;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+
+    .icon {
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+@import "modules/themes.less";
+
+// -------------------
+// Phase Button SVG Icons
+// -------------------
+.btn-icon-svg {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+  fill: currentColor;
+}
+
+// Documenti Dialog Controls
+.docs-dialog {
+  min-width: 450px; // Allarga la finestra
+}
+
+.docs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+
+// Colore Warning (Giallo)
+.btn-warning {
+  background: #f1c40f;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f39c12;
+  }
+}

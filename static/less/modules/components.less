@@ -1,0 +1,136 @@
+// ===================================================================
+//  COMPONENTI UI: MENU LATERALE
+// ===================================================================
+
+.menu-icon {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  margin-left: 0.5vw;
+  top: 0;
+  left: 0;
+  width: 50px;
+  height: 100%;
+  cursor: pointer;
+  padding: 2px;
+  z-index: @z-menu-h-controls;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  outline: none;
+  
+  .nav-icon::before {
+    content: "☰";
+    font-family: @fsans;
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 4.5vh;
+    position: absolute;
+    top: 0;
+    left: 5px;
+    transition-duration: 0.25s;
+    pointer-events: none;
+  }
+}
+
+.menu-btn:checked + .menu-icon .nav-icon::before {
+  content: "✕";
+  font-family: @fsans;
+  font-size: 30px;
+  color: @menu-icon-fg !important;
+  line-height: 4.5vh;
+  position: absolute;
+  top: 0;
+  left: 5px;
+}
+
+.menu-box {
+  box-sizing: border-box;
+  position: fixed;
+  top: 5vh;
+  left: -2000px;
+  height: 95vh;
+  width: @menu-width;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.2vh 0.5vw;
+  z-index: @z-menu-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      margin: 0;
+
+      a {
+        font-family: @fsans;
+        text-decoration: none;
+        display: block;
+        padding: 1px 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 20vw;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.05);
+          text-decoration: none;
+        }
+
+        &.delete {
+          text-align: center;
+          font-weight: bold;
+          font-style: italic;
+          border-radius: 5px;
+          color: #ffffff !important;
+        }
+
+        &#menu-delete-all {
+          background-color: @dark-color3 !important;
+          color: #000 !important;
+          &:hover { background-color: darken(@dark-color3, 10%) !important; }
+        }
+
+        &#menu-reset {
+          background-color: #f1c40f !important;
+          color: #000 !important;
+          &:hover { background-color: darken(#f1c40f, 10%) !important; }
+        }
+
+        &#menu-test {
+          background-color: #ff9e03 !important;
+          color: #000 !important;
+          &:hover { background-color: darken(#ff9e03, 10%) !important; }
+        }
+
+        &.highlight-yellow {
+          background-color: @dark-color3 !important;
+          color: #000 !important;
+          font-weight: bold;
+          padding: 4px 10px;
+          border-radius: 6px;
+          &:hover { background-color: darken(@dark-color3, 10%) !important; }
+        }
+      }
+
+      b {
+        font-family: @fsans;
+        text-align: center;
+        font-weight: 600;
+        max-width: 20vw;
+        display: block;
+        padding: 6px 8px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}

@@ -1,0 +1,137 @@
+// ===================================================================
+//  COMPONENTE UPLOAD
+// ===================================================================
+
+.upload-dialog-content {
+  padding: 1px 5px 1px 5px;
+  text-align: center;
+  h4 {
+    padding: 0;
+    margin: 0;
+  }
+  .upload-description {
+    margin-bottom: 15px;
+    font-size: @fsize-upload;
+  }
+  .upload-mode-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    label {
+      margin: 0 15px;
+      cursor: pointer;
+      font-size: @fsize-menu;
+      input[type="radio"] {
+        margin-right: 8px;
+        transform: scale(1.2);
+      }
+      span {
+        font-weight: bold;
+      }
+    }
+  }
+  .drop-zone {
+    border: 3px dashed;
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition:
+      background-color 0.3s,
+      border-color 0.3s;
+    margin-bottom: 1em;
+    p {
+      font-size: @fsize-upload;
+      margin: 0;
+    }
+  }
+  #id_fileupload {
+    display: none;
+  }
+
+  #progress-container {
+    display: none;
+    margin-top: 20px;
+    div {
+      width: 100%;
+      border-radius: 5px;
+      overflow: hidden;
+      height: 25px;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      line-height: 25px;
+      color: white;
+      text-align: center;
+      transition: width 0.3s ease-in-out;
+      font-weight: bold;
+    }
+    #progress-text {
+      margin-top: 10px;
+      font-size: @fsize-menu;
+      font-weight: bold;
+    }
+  }
+  #file-list-container {
+    margin-top: 1em;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: left;
+  }
+  .file-list-item {
+    padding: 8px 5px;
+    border-bottom: 1px solid;
+    animation: fadeIn 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  #upload-summary {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+    strong {
+      font-size: @fsize-upload;
+      display: block;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #summary-content {
+      div {
+        padding: 5px 0;
+        font-size: @fsize-menu;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      details {
+        margin-top: 10px;
+        cursor: pointer;
+        font-weight: normal;
+        summary {
+          font-weight: bold;
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+        ul {
+          list-style-type: disc;
+          margin-left: 20px;
+          padding-top: 5px;
+          li {
+            font-weight: normal;
+            font-size: @fsize-msg;
+            padding: 2px 0;
+          }
+        }
+      }
+    }
+  }
+}

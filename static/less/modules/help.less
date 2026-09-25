@@ -1,0 +1,56 @@
+/** @format */
+
+// ===================================================================
+//  HELP — Finestra di aiuto
+// ===================================================================
+
+@help-title-size: 1.2em;
+@help-section-size: 1.1em;
+@help-grid-size: 0.95em;
+@help-grid-gap: 6px;
+@help-grid-cols: 110px 1fr;
+@help-color-fase1: #e82323;
+@help-color-fase2: #f6e602;
+@help-color-fase3: #00bd97;
+
+.help-title {
+  font-size: @help-title-size;
+  font-weight: bold;
+}
+
+.help-subtitle {
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+.help-section-title {
+  font-size: @help-section-size;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: @help-grid-cols;
+  gap: @help-grid-gap;
+  margin: 6px 0 12px 0;
+  font-size: @help-grid-size;
+}
+
+.help-grid-last {
+  display: grid;
+  grid-template-columns: @help-grid-cols;
+  gap: @help-grid-gap;
+  margin: 6px 0 0 0;
+  font-size: @help-grid-size;
+}
+
+.help-phase-1 {
+  color: @help-color-fase1;
+}
+
+.help-phase-2 {
+  color: @help-color-fase2;
+}
+
+.help-phase-3 {
+  color: @help-color-fase3;
+}

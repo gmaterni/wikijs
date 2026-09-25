@@ -1,0 +1,113 @@
+// ===================================================================
+//  LISTE DATI E ALBERI PROVIDER / DOCTYPE
+// ===================================================================
+
+// --- Liste Dati ---
+.list-data {
+  width: 100%;
+  margin: 1em auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+
+  li {
+    border: 1px solid;
+    padding: 8px;
+    text-align: left;
+    border-top: none;
+    &:first-child {
+      border-top: 1px solid;
+    }
+  }
+}
+
+// --- Selettori Provider e DocType ---
+.provider-tree-container,
+.doctype-tree-container {
+  display: none;
+  position: absolute;
+  border-radius: 6px;
+  padding: 10px;
+  z-index: @z-tree-container;
+  min-width: 250px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.provider-tree-header,
+.doctype-tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.provider-tree-close-btn,
+.doctype-tree-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.provider-tree ul,
+.doctype-tree ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+// Provider (posizione sinistra impostata via JS: allineata alla scritta KB)
+.provider-tree-container {
+  font-family: @fsans;
+  top: 6vh;
+  .provider-node > span {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 5px;
+    display: block;
+  }
+  .model-list {
+    padding-left: 20px;
+    display: none;
+  }
+
+  .model-list--visible {
+    display: block;
+  }
+  .model-node {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-family: @fsans;
+  }
+}
+
+// DocType
+.doctype-tree-container {
+  top: 6vh;
+  left: 15vw;
+  .doctype-node > span {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 5px;
+    display: block;
+    border-radius: 3px;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .subdoctype-list {
+    padding-left: 30px;
+    display: block;
+  }
+  .subdoctype-node {
+    cursor: default;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+}

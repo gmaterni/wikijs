@@ -1,0 +1,405 @@
+/** @format */
+
+// ===================================================================
+//  APP_UI — Stili per finestre gestione KB, conversazioni, documenti e dati
+// ===================================================================
+
+@color-presente: #00bd97;
+@color-assente: #e82323;
+@color-icon-close: #f6e602;
+@btn-margin-left: 5px;
+@btn-margin-left-wide: 15px;
+@btn-margin-left-docs: 8px;
+
+// --- Icona chiusura gialla (quando senza copia) ---
+.close-icon-yellow {
+  fill: @color-icon-close;
+}
+
+// --- Stato documento nella KB ---
+.status-presente {
+  color: @color-presente;
+}
+
+.status-assente {
+  color: @color-assente;
+}
+
+// --- Pulsanti azioni con margine sinistro ---
+.btn-ml5 {
+  margin-left: @btn-margin-left;
+}
+
+.btn-ml8 {
+  margin-left: @btn-margin-left-docs;
+}
+
+.btn-ml15 {
+  margin-left: @btn-margin-left-wide;
+}
+
+// --- docs-header allineato a sinistra (lista documenti) ---
+.docs-header-start {
+  justify-content: flex-start;
+}
+
+// --- Wrapper ed-wrap per finestra Riepilogo Dati ---
+.ed-wrap {
+  max-height: 70vh;
+  overflow-y: auto;
+
+  h4 {
+    color: #f1c40f;
+    margin: 0.4em 0 0.1em;
+    font-size: 0.9em;
+  }
+
+  .table-data {
+    margin: 0.2em auto 0.6em;
+
+    td {
+      padding: 2px 6px;
+      font-size: 0.85em;
+    }
+
+    tr td:first-child {
+      font-family: monospace;
+      font-size: 0.8em;
+      color: #94a3b8;
+    }
+  }
+}
+
+// --- Messaggio nessun dato ---
+.empty-data {
+  text-align: center;
+  padding: 2em;
+}
+
+// ===================================================================
+//  SELEZIONA LLM — tabella modelli, righe provider, orfani
+// ===================================================================
+
+// --- Tabella LLM Seleziona (compatta stile window-info) ---
+.llm-select-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.llm-select-table th,
+.llm-select-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.llm-select-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 6px;
+  border-bottom: 2px solid currentColor;
+}
+
+// Header della tabella fisso, attaccato alla barra dei comandi.
+// Header e corpo sono due tabelle separate con le stesse colonne.
+.llm-scroll-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.llm-select-head {
+  flex: none;
+  margin: 0;
+  border-bottom: none;
+  border-radius: 0;
+
+  thead th {
+    position: static;
+    background-color: inherit;
+  }
+}
+
+.llm-scroll-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+
+  .llm-select-table {
+    margin: 0;
+    border-top: none;
+    border-radius: 0;
+
+    tbody tr:first-child td {
+      border-top: none;
+    }
+  }
+}
+
+.llm-select-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid;
+}
+
+.llm-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.table-data .llm-row:hover,
+.llm-row:hover {
+  background-color: fade(@color-presente, 10%);
+}
+
+// Riga selezionata: sfondo discreto con semplice accento laterale,
+// senza inversione dei colori di testo (restano quelli di base).
+.table-data .llm-row.selected,
+.llm-row.selected {
+  background-color: fade(#f6e602, 12%) !important;
+}
+
+.table-data .llm-row.selected:hover,
+.llm-row.selected:hover {
+  background-color: fade(#f6e602, 20%) !important;
+}
+
+.table-data .llm-row.selected td:first-child,
+.llm-row.selected td:first-child {
+  box-shadow: inset 3px 0 0 #f6e602;
+}
+
+// Riga selezionata: tutti i caratteri in giallo brillante e sottolineati.
+.table-data .llm-row.selected td,
+.llm-row.selected td {
+  color: #ffeb3b !important;
+  text-decoration: underline;
+}
+
+.llm-row-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: 100%;
+  padding: 2px 0;
+}
+
+.llm-name-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.llm-name-cell {
+  width: 100%;
+  min-width: 0; // permette il truncate
+}
+
+.llm-vote-cell,
+.llm-time-cell,
+.llm-window-cell {
+  text-align: center;
+  font-size: 0.85em;
+}
+
+.llm-vote-cell {
+  font-weight: 700;
+  color: #ff8c00; // arancione brillante per il voto
+  width: 3.5ch; // voto: max 3 char (es. "10")
+}
+
+.llm-time-cell {
+  font-family: monospace;
+  font-size: 0.8em;
+  width: 4.5ch; // tempo: max 4 char (es. "1.2s")
+}
+
+.llm-window-cell {
+  font-family: monospace;
+  font-size: 0.8em;
+  width: 5.5ch; // finestra: max 5 char (es. "1024")
+}
+
+// --- Riga provider evidenziata ---
+.llm-provider-row {
+  background-color: fade(#ff8c00, 15%);
+}
+
+.table-data .llm-provider-cell,
+.llm-provider-cell {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: #ff8c00 !important;
+  padding: 6px 8px !important;
+  border-bottom: 2px solid #ff8c00 !important;
+
+  b {
+    background-color: transparent !important;
+    color: #ff8c00 !important;
+    padding: 0 !important;
+    font-size: 1em;
+  }
+}
+
+.llm-provider-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.llm-provider-row + .llm-row {
+  border-top: none;
+}
+
+// --- Barra header con pulsanti azione (Salva/Aggiungi/Annulla/Seleziona Attivi) ---
+.llm-btn-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: auto;
+  min-height: 34px;
+  padding: 2px 6px;
+  box-sizing: border-box;
+  overflow: visible;
+  position: relative;
+  z-index: 99999;
+
+  .llm-header-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    overflow: visible;
+
+    button {
+      flex: none;
+      padding: 4px 12px;
+      font-size: 0.8em;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      overflow: visible;
+      position: relative;
+    }
+
+    .btn-yellow {
+      background-color: #f6e602;
+      color: #1a1a1a;
+
+      &:hover {
+        background-color: lighten(#f6e602, 12%);
+      }
+    }
+
+    .btn-info {
+      background-color: #2196f3;
+      color: #ffffff;
+
+      &:hover {
+        background-color: lighten(#2196f3, 10%);
+      }
+    }
+  }
+
+  .btn-close {
+    position: static;
+    flex: none;
+  }
+}
+
+// Contenuto per finestra LLM: header label attaccato ai comandi, corpo scorre
+.llm-select-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  max-height: none;
+  overflow-y: visible;
+}
+
+// Finestra Seleziona LLM: niente padding extra, contenuto a tutto bordo.
+// La finestra si adatta al contenuto; l'altezza massima è gestita dal JS
+// (container output+input) e il corpo scrolla oltre.
+#llm-selection-window .window-info {
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+#llm-selection-window .div-info {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+// --- Test LLM: lista provider senza background (nomi come testo cliccabile) ---
+.test-llm-providers {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+
+  li {
+    margin: 2px 0;
+  }
+
+  button[data-action="test-provider"] {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 4px 2px;
+    cursor: pointer;
+    font-size: 1em;
+    color: inherit;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    &:hover .test-llm-provider-name {
+      text-decoration: underline;
+    }
+  }
+
+  .test-llm-provider-count {
+    margin-left: 8px;
+    font-size: 0.85em;
+    opacity: 0.75;
+  }
+}
+
+// --- Sezione orfani: selezionati non più disponibili (sola lettura) ---
+.llm-orphan-wrap {
+  margin-top: 10px;
+  padding-top: 6px;
+}
+
+.llm-orphan-title {
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.llm-orphan-desc {
+  font-size: 0.85em;
+  font-style: italic;
+  margin: 0 0 6px;
+}
+
+.llm-orphan-row {
+  opacity: 0.75;
+}

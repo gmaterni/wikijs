@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>Login</title>
+        <style>
+            body {
+                background: #0a0a0a;
+                color: #e0e0e0;
+                font-family: sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+
+            .card {
+                background: #1a1a1a;
+                padding: 40px;
+                border-radius: 8px;
+                border: 1px solid #2a2a2a;
+                text-align: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="card">
+            <h2>Accedi con Google</h2>
+            <div id="g_signin"></div>
+        </div>
+
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+            const CLIENT_ID = '387282319504-snlehr8cirvenc82hrpso9pipf3f3qds.apps.googleusercontent.com';
+
+            // Utilizzo di una moderna arrow function per gestire la risposta
+            const handleGoogleResponse = (r) => {
+                const payload = r.credential.split('.')[1];
+                const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+                localStorage.setItem('user_web_id', decoded.email);
+                window.location.replace('index.html');
+            };
+
+            window.onload = () => {
+                google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleGoogleResponse });
+                google.accounts.id.renderButton(document.getElementById("g_signin"), { theme: "filled_blue", size: "large" });
+            };
+        </script>
+    </body>
+
+</html>

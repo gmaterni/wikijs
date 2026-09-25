@@ -1,0 +1,704 @@
+// ===================================================================
+//  6. TEMPLATE DEGLI STILI
+// ===================================================================
+
+.apply-theme() {
+  background: @container-bg;
+  color: @text;
+
+  .spinner,
+  .spinner-wait {
+    .pulse-icon {
+      background-color: @color1;
+      box-shadow: 0 0 0 0 fade(@color1, 70%);
+      animation: pulse-spinner-icon 1.5s infinite;
+    }
+    .spinner-content {
+      background: @spinner-bg;
+      border: @spinner-border;
+      border-radius: @spinner-radius;
+      box-shadow: @spinner-shadow;
+      &:hover {
+        border-color: #ffeb3b;
+        background: @spinner-bg;
+      }
+    }
+    .stop-message {
+      color: @spinner-text;
+    }
+  }
+
+  // --- Layout ---
+  div.container {
+    background: @container-bg;
+  }
+  div.container .item1 .output-wrapper .text-out {
+    background: @output-bg;
+    color: @text;
+    border: none;
+    box-shadow: 0 0 0 2px @border-shadow;
+    transition: all 0.3s ease;
+    outline: none;
+    &:hover {
+      box-shadow: 0 0 0 2px @color2;
+    }
+    &:focus-within,
+    &:focus {
+      box-shadow: 0 0 0 2px @color1;
+    }
+    .div-text .user,
+    .div-text .assistant,
+    .div-text .system {
+      h1, h2, h3 {
+        color: @title-color;
+      }
+      h1 {
+        border-bottom: 1px solid fade(@text, 20%);
+      }
+      & > b:first-child {
+        border-bottom: 1px solid fade(@text, 10%) !important;
+      }
+    }
+    .div-text .user {
+      background: fade(@color2, 5%);
+      border: 1px solid fade(@color2, 20%) !important;
+      border-left: 6px solid @color2 !important;
+      & > b:first-child {
+        color: @color3;
+      }
+      .btn-edit-last {
+        background: fade(@container-bg, 80%);
+        border: 1px solid fade(@text, 10%);
+        color: @color2;
+        &:hover {
+          color: @color1;
+          background: @container-bg;
+        }
+      }
+    }
+    .div-text .assistant {
+      background: fade(@color2, 5%);
+      border: 1px solid fade(@color1, 20%) !important;
+      border-left: 6px solid @color1 !important;
+      & > b:first-child {
+        color: @color3;
+      }
+    }
+    .div-text .system {
+      background: fade(@color3, 5%);
+      border: 1px dashed fade(@color3, 30%) !important;
+      & > b:first-child {
+        color: @color3;
+      }
+    }
+  }
+  div.container .item2 .input-wrapper .text-input {
+    background: @input-bg;
+    color: @text;
+    box-shadow: 0 0 0 2px @border-shadow;
+    &:hover {
+      box-shadow: 0 0 0 2px @color2;
+    }
+    &:focus {
+      box-shadow: 0 0 0 2px @color1;
+    }
+  }
+
+  // --- Menu ---
+  .menu-h {
+    background-color: @menu-h-bg;
+    box-shadow: 0 0 0 2px @border-shadow;
+    .menu-icon {
+      &:hover .nav-icon::before {
+        color: @menu-icon-hover;
+      }
+      .nav-icon::before {
+        color: @menu-icon-fg;
+      }
+    }
+    .head-wrapper {
+      .log,
+      .help,
+      .provider-settings,
+      .upload {
+        color: @text;
+        background: @btn-bg;
+        &:hover {
+          background: @btn-hover;
+        }
+      }
+      .help {
+        color: @help-fg;
+      }
+      .readme {
+        background: transparent;
+        color: @help-fg;
+        &:hover {
+          background: transparent;
+          color: @help-fg;
+        }
+      }
+      .upload .icon {
+        stroke: @text;
+      }
+      .log {
+        background: @log-bg !important;
+        color: @log-fg !important;
+        &:hover {
+          background: @log-hover-bg !important;
+        }
+        &.active {
+          background: @log-active-bg !important;
+          &:hover {
+            background: @log-active-hover-bg !important;
+          }
+        }
+      }
+    }
+  }
+  .menu-box {
+    background: @menu-box-bg;
+    box-shadow: 0 0 0 2px @border-box-shadow;
+    ul {
+      border-top: 1px solid @menu-box-border;
+      li {
+        border: 1px solid @menu-box-border;
+        border-top: none;
+        b {
+          background: @label-btn-bg;
+          color: @label-btn-fg;
+        }
+        a {
+          color: @menu-box-fg;
+          font-size: @fsize-menu;
+        }
+        &:hover {
+          background-color: lighten(@menu-bg, 25%);
+        }
+        a.delete,
+        a.help {
+          background: @delete-btn-bg;
+          color: @delete-btn-fg;
+          &:hover {
+            background: @delete-btn-hover-bg;
+            color: @delete-btn-hover-fg;
+          }
+        }
+      }
+    }
+  }
+
+  // --- Pulsanti ---
+  .clear-input {
+    color: @btn-color;
+    background: transparent;
+    &:hover {
+      color: @btn-hover-fg;
+    }
+  }
+  .input-context-actions,
+  .input-actions {
+    button {
+      background-color: @btn-bg;
+      .icon,
+      .btn-icon-svg {
+        fill: @text;
+      }
+      border: none;
+      box-shadow: none;
+      &:hover {
+        background-color: @btn-hover;
+        .icon,
+        .btn-icon-svg {
+          fill: @btn-hover-fg;
+        }
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .input-actions {
+    #btn-action2-start-convo {
+      background: @dark-color3; // Giallo
+      &:hover {
+        background: lighten(@dark-color3, 10%);
+      }
+    }
+    #btn-action3-continue-convo {
+      background: @dark-color2; // Verde
+      &:hover {
+        background: lighten(@dark-color2, 10%);
+      }
+    }
+  }
+
+  .input-context-actions {
+    .clear-input,
+    #btn-copy-output {
+      background-color: @btn-bg;
+      .icon {
+        fill: @text;
+      }
+      &:hover {
+        background-color: @btn-hover;
+        .icon {
+          fill: @btn-hover-fg;
+        }
+      }
+    }
+    #btn-copy-output.copied {
+      background: @btn-copied;
+    }
+  }
+
+  // --- Finestre ---
+  .window-text,
+  .window-info {
+    background: @wnd-bg;
+    color: @text;
+    box-shadow: 0 0 0 2px @wnd-border-shadow;
+  }
+  #llm-selection-window .window-info {
+    border: 1px solid @wnd-border-shadow;
+  }
+  .window-text {
+    pre.pre-text,
+    div.div-text {
+      color: @wnd-pre-color;
+    }
+    div.text .center {
+      color: @color3;
+    }
+  }
+  .btn-wrapper {
+    background: @wnd-btn-wrapper-bg;
+    .btn-copy {
+      background: inherit;
+      .copy-icon {
+        fill: @btn-color;
+        &:hover {
+          fill: @btn-hover-fg;
+          background: @wnd-btn-hover-bg;
+        }
+      }
+    }
+    .btn-close {
+      background-color: transparent;
+      color: @btn-color;
+      &:hover {
+        color: @btn-hover-fg;
+        background: @wnd-btn-hover-bg;
+      }
+    }
+  }
+  .window-info .div-info li {
+    border-bottom: 1px solid darken(@wnd-bg, 10%);
+  }
+
+  // --- Tabelle ---
+  .table-data {
+    th,
+    td {
+      border-color: @menu-border;
+      b {
+        background-color: @btn-success-bg;
+        color: #ffffff;
+      }
+    }
+    th {
+      background-color: @menu-h-bg;
+    }
+    .link-show-doc {
+      color: @table-link-fg;
+      &:hover {
+        color: @table-link-hover-fg;
+      }
+    }
+    tr:nth-child(even) {
+      background-color: @table-tr-even-bg;
+    }
+    tr:hover {
+      background-color: @table-tr-hover-bg;
+    }
+  }
+
+  // Raffinamento Pulsanti Azione
+  .btn-success {
+    background-color: @light-color2;
+    color: #ffffff;
+    &:hover {
+      background-color: lighten(@light-color2, 10%);
+    }
+  }
+
+  .btn-danger {
+    background-color: @light-color1;
+    color: #ffffff;
+    &:hover {
+      background-color: lighten(@light-color1, 10%);
+    }
+  }
+
+  // --- Upload ---
+  .upload-dialog-content {
+    .upload-description {
+      color: @text;
+    }
+    .drop-zone {
+      border-color: @drop-zone-border;
+      p {
+        color: @drop-zone-fg;
+      }
+      &.drag-over {
+        background-color: @drop-zone-drag-over-bg;
+        border-color: @color2;
+      }
+    }
+    #progress-container {
+      div {
+        background-color: @progress-bg;
+      }
+      #progress-bar {
+        background-color: @progress-bar-bg;
+      }
+      #progress-text {
+        color: @text;
+      }
+    }
+    #file-list-container {
+      border-color: @file-list-border;
+    }
+    .file-list-item {
+      border-bottom-color: @file-list-item-border;
+      color: @text;
+      &.success {
+        background-color: @file-list-item-success-bg;
+        color: @file-list-item-success-fg;
+      }
+      &.duplicate {
+        background-color: @file-list-item-duplicate-bg;
+        color: @file-list-item-duplicate-fg;
+      }
+      &.error {
+        background-color: @file-list-item-error-bg;
+        color: @file-list-item-error-fg;
+      }
+    }
+    #upload-summary {
+      background-color: @summary-bg;
+      border: 1px solid @summary-border;
+      strong {
+        color: @text;
+      }
+      #summary-content {
+        .success {
+          color: @summary-success-fg;
+        }
+        .duplicate {
+          color: @summary-duplicate-fg;
+        }
+        .error {
+          color: @summary-error-fg;
+        }
+        details {
+          summary {
+            color: @text;
+          }
+          ul li {
+            color: @text;
+          }
+        }
+      }
+    }
+  }
+
+  // --- Selettori Provider/DocType ---
+  .provider-tree-container,
+  .doctype-tree-container {
+    background-color: @tree-bg;
+    border: 2px solid @tree-border;
+  }
+  .provider-tree-header,
+  .doctype-tree-header {
+    color: @tree-header-fg;
+  }
+  .provider-tree-close-btn,
+  .doctype-tree-close-btn {
+    color: @tree-close-btn-fg;
+  }
+  .provider-tree .provider-node > span {
+    color: @tree-node-fg;
+    &.active {
+      color: @tree-node-active-fg;
+    }
+  }
+  .provider-tree .model-node {
+    color: @tree-model-node-fg;
+    &:hover {
+      background-color: @tree-model-node-hover-bg;
+    }
+    &.active {
+      background-color: @tree-model-node-active-bg;
+      color: @tree-model-node-active-fg;
+    }
+  }
+  .doctype-tree .doctype-node > span {
+    color: @tree-doctype-node-fg;
+    &.active {
+      background-color: @tree-doctype-node-active-bg;
+      color: @tree-doctype-node-active-fg;
+      &:hover {
+        text-decoration: none;
+      }
+    }
+  }
+  .doctype-tree .subdoctype-node {
+    color: @tree-subdoctype-node-fg;
+    &:hover {
+      background-color: @tree-subdoctype-node-hover-bg;
+      color: @tree-subdoctype-node-hover-fg;
+    }
+  }
+  .active-model-display {
+    // background: @active-model-bg;
+    // border-color:@active-model-border;
+    color: @active-model-fg;
+  }
+  .active-kb-display {
+    color: @kb-display-fg;
+  }
+}
+
+// ===================================================================
+//  7. APPLICAZIONE DEI TEMI
+// ===================================================================
+
+// -------------------
+// Tema DARK
+// -------------------
+.theme-dark {
+  // --- Mappatura Variabili Generiche ---
+
+  @pulse-animation: pulse-dark;
+  @log-bg: darken(@dark-color1, 20%);
+  @log-fg: @dark-text;
+  @log-hover-bg: darken(@dark-color1, 10%);
+  @log-active-bg: darken(@dark-color2, 20%);
+  @log-active-hover-bg: darken(@dark-color2, 10%);
+  @container-bg: @dark-container-bg;
+  @text: @dark-text;
+  @color1: @dark-color1;
+  @color2: @dark-color2;
+  @color3: @dark-color3;
+  @border-shadow: @dark-border-shadow;
+  @btn-bg: @dark-btn-bg;
+  @help-fg: @dark-help-fg;
+  @btn-hover: @dark-btn-hover;
+  @btn-color: @dark-btn-color;
+  @btn-hover-fg: @dark-btn-hover-fg;
+  @btn-copied: @dark-btn-copied;
+  @output-bg: @dark-output-bg;
+  @input-bg: @dark-input-bg;
+  @wnd-bg: @dark-wnd-bg;
+  @wnd-border-shadow: @dark-wnd-border-shadow;
+  @wnd-pre-color: @dark-wnd-pre-color;
+  @menu-h-bg: lighten(@dark-menu-bg, 10%);
+  @menu-bg: @dark-menu-bg;
+  @menu-border: @dark-menu-border;
+  @menu-fg: @dark-menu-fg;
+  @menu-icon-fg: @dark-menu-icon-fg;
+  @menu-icon-hover: @dark-menu-icon-hover;
+  @menu-box-bg: lighten(@dark-menu-bg, 5%);
+  @menu-box-border: @dark-menu-border;
+  @menu-box-fg: @dark-menu-fg;
+  @border-box-shadow: @dark-border-shadow;
+  @btn-send0-bg: @dark-btn-send0-bg;
+  @btn-send0-hover-bg: @dark-btn-send0-hover-bg;
+  @btn-send1-bg: @dark-btn-send1-bg;
+  @btn-send1-hover-bg: @dark-btn-send1-hover-bg;
+  @btn-edit-fixed-bg: @dark-btn-edit-fixed-bg;
+  @btn-edit-fixed-hover-bg: @dark-btn-edit-fixed-hover-bg;
+  @btn-send2-bg: @dark-btn-send2-bg;
+  @btn-send2-hover-bg: @dark-btn-send2-hover-bg;
+  @label-btn-bg: @dark-label-btn-bg;
+  @label-btn-fg: #ffffff;
+  @delete-btn-bg: @dark-delete-btn-bg;
+  @delete-btn-hover-bg: @dark-delete-btn-hover-bg;
+  @delete-btn-fg: @dark-delete-btn-fg;
+  @delete-btn-hover-fg: @dark-delete-btn-hover-fg;
+  @btn-success-bg: @dark-btn-success-bg;
+  @btn-success-hover-bg: @dark-btn-success-hover-bg;
+  @btn-danger-bg: @dark-btn-danger-bg;
+  @btn-danger-hover-bg: @dark-btn-danger-hover-bg;
+  @wnd-btn-wrapper-bg: lighten(@dark-wnd-bg, 5%);
+  @wnd-btn-hover-bg: lighten(@dark-wnd-bg, 15%);
+  @table-tr-even-bg: lighten(@dark-wnd-bg, 5%);
+  @table-tr-hover-bg: lighten(@dark-wnd-bg, 15%);
+  @table-link-fg: #efac37;
+  @table-link-hover-fg: @dark-color1;
+  @drop-zone-border: #888;
+  @drop-zone-fg: #888;
+  @drop-zone-drag-over-bg: lighten(@dark-container-bg, 10%);
+  @file-list-border: #444;
+  @file-list-item-border: #555;
+  @tree-bg: #2d2d2d;
+  @tree-border: #4caf50;
+  @file-list-item-success-bg: @dark-file-list-item-success-bg;
+  @file-list-item-success-fg: @dark-file-list-item-success-fg;
+  @file-list-item-duplicate-bg: @dark-file-list-item-duplicate-bg;
+  @file-list-item-duplicate-fg: @dark-file-list-item-duplicate-fg;
+  @file-list-item-error-bg: @dark-file-list-item-error-bg;
+  @file-list-item-error-fg: @dark-file-list-item-error-fg;
+  @summary-bg: @dark-summary-bg;
+  @summary-border: @dark-summary-border;
+  @summary-success-fg: @dark-summary-success-fg;
+  @summary-duplicate-fg: @dark-summary-duplicate-fg;
+  @summary-error-fg: @dark-summary-error-fg;
+  @progress-bg: @dark-progress-bg;
+  @progress-bar-bg: @dark-progress-bar-bg;
+  @tree-header-fg: #eee;
+  @tree-close-btn-fg: #ccc;
+  @tree-node-fg: #87ceeb;
+  @tree-node-active-fg: #4caf50;
+  @tree-model-node-fg: #ddd;
+  @tree-model-node-hover-bg: #444;
+  @tree-model-node-active-bg: #4caf50;
+  @tree-model-node-active-fg: white;
+  @tree-doctype-node-fg: #4caf50;
+  @tree-doctype-node-active-bg: #4caf50;
+  @tree-doctype-node-active-fg: white;
+  @tree-subdoctype-node-fg: #bbb;
+  @tree-subdoctype-node-hover-bg: #333;
+  @tree-subdoctype-node-hover-fg: #ddd;
+  @active-model-fg: lighten(@dark-color2, 5%);
+  @kb-display-fg: @dark-kb-display-fg;
+  @title-color: lighten(@dark-color3, 15%); // Titoli chiari su fondo scuro
+
+  // --- Applica Stili e Override ---
+  .apply-theme();
+
+  .btn-theme-toggle svg {
+    stroke: @dark-menu-fg;
+  }
+}
+
+// -------------------
+// Tema LIGHT
+// -------------------
+.theme-light {
+  // --- Mappatura Variabili Generiche ---
+  @pulse-animation: pulse-light;
+  @log-bg: @light-color1;
+  @log-fg: @light-bg;
+  @log-hover-bg: lighten(@light-color1, 10%);
+  @log-active-bg: @light-color2;
+  @log-active-hover-bg: lighten(@light-color2, 10%);
+  @container-bg: @light-container-bg;
+  @text: @light-text;
+  @color1: @light-color1;
+  @color2: @light-color2;
+  @color3: @light-color3;
+
+  .provider-settings:hover {
+    background-color: fade(@light-color2, 40%) !important;
+    box-shadow: 0 0 8px fade(@light-color2, 50%);
+  }
+
+  @border-shadow: @light-border-shadow;
+  @btn-bg: @light-btn-bg;
+  @help-fg: @light-help-fg;
+  @btn-hover: @light-btn-hover;
+  @btn-color: @light-btn-color;
+  @btn-hover-fg: @light-btn-hover-fg;
+  @btn-copied: @light-btn-copied;
+  @output-bg: @light-output-bg;
+  @input-bg: @light-input-bg;
+  @wnd-bg: @light-wnd-bg;
+  @wnd-border-shadow: @light-wnd-border-shadow;
+  @wnd-pre-color: @light-wnd-pre-color;
+  @menu-h-bg: @light-menu-bg;
+  @menu-bg: @light-menu-bg;
+  @menu-border: @light-menu-border;
+  @menu-fg: @light-menu-fg;
+  @menu-icon-fg: @light-menu-icon-fg;
+  @menu-icon-hover: @light-menu-icon-hover;
+  @menu-box-bg: @light-menu-box-bg;
+  @menu-box-border: @light-menu-box-border;
+  @menu-box-fg: @light-menu-box-fg;
+  @border-box-shadow: @light-border-box-shadow;
+  // Modifica per usare gli stessi colori del tema scuro per i pulsanti di invio
+  // @btn-send0-bg: @light-btn-send0-bg;
+  // @btn-send0-hover-bg: @light-btn-send0-hover-bg;
+  // @btn-send1-bg: @light-btn-send1-bg;
+  // @btn-send1-hover-bg: @light-btn-send1-hover-bg;
+  // @btn-send2-bg: @light-btn-send2-bg;
+  // @btn-send2-hover-bg: @light-btn-send2-hover-bg;
+  @btn-send0-bg: @dark-btn-send0-bg;
+  @btn-send0-hover-bg: @dark-btn-send0-hover-bg;
+  @btn-send1-bg: @dark-btn-send1-bg;
+  @btn-send1-hover-bg: @dark-btn-send1-hover-bg;
+  @btn-edit-fixed-bg: @dark-btn-edit-fixed-bg;
+  @btn-edit-fixed-hover-bg: @dark-btn-edit-fixed-hover-bg;
+  @btn-send2-bg: @dark-btn-send2-bg;
+  @btn-send2-hover-bg: @dark-btn-send2-hover-bg;
+  @label-btn-bg: @light-label-btn-bg;
+  @label-btn-fg: #ffffff;
+  @delete-btn-bg: @light-delete-btn-bg;
+  @delete-btn-hover-bg: @light-delete-btn-hover-bg;
+  @delete-btn-fg: @light-delete-btn-fg;
+  @delete-btn-hover-fg: @light-delete-btn-hover-fg;
+  @btn-success-bg: @light-btn-success-bg;
+  @btn-success-hover-bg: @light-btn-success-hover-bg;
+  @btn-danger-bg: @light-btn-danger-bg;
+  @btn-danger-hover-bg: @light-btn-danger-hover-bg;
+  @wnd-btn-wrapper-bg: darken(@light-wnd-bg, 2%);
+  @wnd-btn-hover-bg: darken(@light-wnd-bg, 5%);
+  @table-tr-even-bg: darken(@light-wnd-bg, 3%);
+  @table-tr-hover-bg: darken(@light-wnd-bg, 8%);
+  @table-link-fg: #0303d3;
+  @table-link-hover-fg: @light-color1;
+  @drop-zone-border: #aaa;
+  @drop-zone-fg: #aaa;
+  @drop-zone-drag-over-bg: darken(@light-container-bg, 5%);
+  @file-list-border: #ccc;
+  @file-list-item-border: #ddd;
+  @tree-bg: #fafafa;
+  @tree-border: @light-color2;
+  @file-list-item-success-bg: @light-file-list-item-success-bg;
+  @file-list-item-success-fg: @light-file-list-item-success-fg;
+  @file-list-item-duplicate-bg: @light-file-list-item-duplicate-bg;
+  @file-list-item-duplicate-fg: @light-file-list-item-duplicate-fg;
+  @file-list-item-error-bg: @light-file-list-item-error-bg;
+  @file-list-item-error-fg: @light-file-list-item-error-fg;
+  @summary-bg: @light-summary-bg;
+  @summary-border: @light-summary-border;
+  @summary-success-fg: @light-summary-success-fg;
+  @summary-duplicate-fg: @light-summary-duplicate-fg;
+  @summary-error-fg: @light-summary-error-fg;
+  @progress-bg: @light-progress-bg;
+  @progress-bar-bg: @light-progress-bar-bg;
+  @tree-header-fg: @light-text;
+  @tree-close-btn-fg: #555;
+  @tree-node-fg: #007acc;
+  @tree-node-active-fg: @light-color2;
+  @tree-model-node-fg: #333;
+  @tree-model-node-hover-bg: #ddd;
+  @tree-model-node-active-bg: @light-color2;
+  @tree-model-node-active-fg: white;
+  @tree-doctype-node-fg: @light-color2;
+  @tree-doctype-node-active-bg: @light-color2;
+  @tree-doctype-node-active-fg: white;
+  @tree-subdoctype-node-fg: #666;
+  @tree-subdoctype-node-hover-bg: #eee;
+  @tree-subdoctype-node-hover-fg: #333;
+  @active-model-fg: darken(@light-color2, 10%);
+  @kb-display-fg: @light-kb-display-fg;
+  @title-color: @light-color3; // Titolo scuro (arancione bruciato) su fondo chiaro
+
+  // --- Applica Stili e Override ---
+  .apply-theme();
+
+  .btn-theme-toggle svg {
+    stroke: @light-text;
+  }
+}

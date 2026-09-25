@@ -1,0 +1,179 @@
+/** @format */
+
+// -------------------
+// Fonts
+// -------------------
+@fserif: Georgia, "Times New Roman", serif; 
+@fsans: "Inter", "Segoe UI", Roboto, Arial, sans-serif; 
+
+// -------------------
+// Font Sizes
+// -------------------
+@fsize-out: 18px;
+@fsize-inp: 18px;
+@fsize-help: 16px;
+@fsize-btn-close: 20px;
+@fsize-msg: 14px;
+@fsize-upload: 18px;
+@fsize-log: 13px;
+@fsize-menu: 13px;
+
+@menu-icon-fg: #aea7a7; // Valore di default
+
+// -------------------
+// Variabili Comuni
+// -------------------
+@menu-width: 20vw;
+
+// -------------------
+// Z-Index (gerarchia layer UI)
+// -------------------
+@z-tree-btn:        5;        // Pulsanti albero provider/documenti
+@z-item2:           10;       // Area input/output
+@z-btn-icon:        15;       // Pulsanti icona (es. cancellazione)
+@z-menu-box:        101;      // Menu laterale
+@z-menu-h-controls: 110;      // Icona hamburger, toggle tema
+@z-help:            200;      // Pulsante help
+@z-tree-container:  1001;     // Pannello albero provider/doctype
+@z-spinner:         50000;    // Overlay spinner modal (sopra tooltip)
+@z-spinner-wait:    50001;    // Spinner wait (sopra spinner base)
+@z-menu-h:          10010;    // Barra menu orizzontale, pulsante log
+@z-log-panel:       10011;    // Finestra log
+@z-dialog-overlay:  20010;    // Overlay dialog
+@z-dialog:          20011;    // Finestra dialog
+@z-tooltip:         30000;    // Tooltip (massima priorità)
+
+// -------------------------------------------------------------------
+// TEMA: Dark
+// -------------------------------------------------------------------
+@dark-bg: #1a1a1a;
+@dark-text: #e0e0e0;
+@dark-color1: #e82323; 
+@dark-color2: #00bd97; 
+@dark-color3: #f6e602; 
+
+@dark-container-bg: #252525;
+@dark-border-shadow: #333333;
+@dark-btn-bg: #333333;
+@dark-help-fg: #ff9e03;
+@dark-output-bg: #2d2d2d;
+@dark-input-bg: #2d2d2d;
+@dark-menu-bg: #252525;
+@dark-menu-border: #444;
+@dark-menu-fg: @dark-text;
+@dark-menu-icon-fg: #aea7a7;
+@dark-menu-icon-hover: @dark-color1;
+@dark-menu-box-bg: #1f1f1f;
+@dark-menu-box-border: #444;
+@dark-menu-box-fg: @dark-text;
+@dark-border-box-shadow: #333;
+@dark-log-bg: darken(@dark-color1, 20%);
+@dark-log-fg: @dark-text;
+@dark-log-hover-bg: darken(@dark-color1, 10%);
+@dark-log-active-bg: darken(@dark-color2, 20%);
+@dark-progress-bg: #444;
+@dark-progress-bar-bg: @dark-color2;
+@dark-summary-bg: #2d2d2d;
+@dark-summary-border: #444;
+@dark-summary-success-fg: @dark-color2;
+@dark-summary-duplicate-fg: @dark-color3;
+@dark-summary-error-fg: @dark-color1;
+@dark-file-list-item-success-bg: rgba(0, 189, 151, 0.2);
+@dark-file-list-item-success-fg: #00bd97;
+@dark-file-list-item-duplicate-bg: rgba(246, 230, 2, 0.2);
+@dark-file-list-item-duplicate-fg: #f6e602;
+@dark-file-list-item-error-bg: rgba(232, 35, 35, 0.2);
+@dark-file-list-item-error-fg: #e82323;
+@dark-btn-hover: #444;
+@dark-btn-hover-fg: lighten(@dark-color2, 10%);
+@dark-btn-color: #bbb;
+@dark-btn-copied: darken(@dark-color2, 20%);
+@dark-wnd-bg: #2d2d2d;
+@dark-wnd-border-shadow: darken(@dark-color3, 10%);
+@dark-wnd-pre-color: lighten(@dark-color3, 30%);
+@dark-wnd-btn-wrapper-bg: #333;
+@dark-wnd-btn-hover-bg: #444;
+@dark-btn-send0-bg: @dark-color1;
+@dark-btn-send0-hover-bg: lighten(@dark-color1, 10%);
+@dark-btn-send1-bg: @dark-color3;
+@dark-btn-send1-hover-bg: lighten(@dark-color3, 10%);
+@dark-btn-send2-bg: @dark-color2;
+@dark-btn-send2-hover-bg: lighten(@dark-color2, 10%);
+@dark-label-btn-bg: darken(@dark-color2, 10%);
+@dark-delete-btn-bg: darken(@dark-color1, 10%);
+@dark-delete-btn-hover-bg: darken(@dark-color1, 20%);
+@dark-delete-btn-fg: #ffffff;
+@dark-delete-btn-hover-fg: #ffffff;
+@dark-btn-success-bg: darken(@dark-color2, 20%);
+@dark-btn-success-hover-bg: darken(@dark-color2, 15%);
+@dark-btn-edit-fixed-bg: @dark-color3;
+@dark-btn-edit-fixed-hover-bg: lighten(@dark-color3, 15%);
+@dark-btn-danger-bg: @dark-color1;
+@dark-btn-danger-hover-bg: lighten(@dark-color1, 10%);
+@dark-kb-display-fg: @dark-color3;
+
+// -------------------------------------------------------------------
+// TEMA: Light (Refined for contrast)
+// -------------------------------------------------------------------
+@light-bg: #eef0f2;           // Sfondo grigio freddo
+@light-text: #212121;
+@light-color1: #d32f2f;
+@light-color2: #00796b;
+@light-color3: #a66100;       // Reso molto più scuro (da #ff9e03 a #a66100) per contrasto su bianco
+
+@light-container-bg: #eef0f2; // Allineato al bg
+@light-border-shadow: #c8c8c8; // Bordo definito
+@light-btn-bg: #e0e0e0;
+@light-help-fg: @light-color3;
+@light-output-bg: #ffffff;    // Card bianche per stacco netto
+@light-input-bg: #ffffff;
+@light-menu-bg: #ffffff;      // Sidebar bianca
+@light-menu-fg: #212121;
+@light-menu-h-bg: #e9ecef;
+@light-menu-border: #dee2e6;
+@light-menu-icon-fg: #757575;
+@light-menu-icon-hover: #d32f2f;
+@light-menu-box-bg: #f8f9fa;
+@light-menu-box-border: #dee2e6;
+@light-menu-box-fg: #333;
+@light-menu-icon-box-hover: #b71c1c;
+@light-border-box-shadow: #ccc;
+@light-log-bg: #d32f2f;
+@light-log-fg: #ffffff;
+@light-log-hover-bg: #b71c1c;
+@light-log-active-bg: #00796b;
+@light-log-active-hover-bg: #004d40;
+@light-btn-hover: #dee2e6;
+@light-btn-hover-fg: #d32f2f;
+@light-btn-color: #333;
+@light-btn-copied: #e0f2f1;
+@light-wnd-bg: #ffffff;
+@light-wnd-border-shadow: #ff9e03;
+@light-wnd-pre-color: #212121;
+@light-wnd-btn-wrapper-bg: #f8f9fa;
+@light-wnd-btn-hover-bg: #e9ecef;
+@light-file-list-item-success-bg: #d4edda;
+@light-file-list-item-success-fg: #155724;
+@light-file-list-item-duplicate-bg: #fff3cd;
+@light-file-list-item-duplicate-fg: #856404;
+@light-file-list-item-error-bg: #f8d7da;
+@light-file-list-item-error-fg: #721c24;
+@light-kb-display-fg: #e65100;
+@light-progress-bg: #e0e0e0;
+@light-progress-bar-bg: #00796b;
+@light-label-btn-bg: #00796b;
+@light-delete-btn-bg: #d32f2f;
+@light-delete-btn-hover-bg: #b71c1c;
+@light-delete-btn-fg: #ffffff;
+@light-delete-btn-hover-fg: #ffffff;
+@light-btn-success-bg: #00796b;
+@light-btn-success-hover-bg: #004d40;
+@light-btn-edit-fixed-bg: @light-color3;
+@light-btn-edit-fixed-hover-bg: lighten(@light-color3, 10%);
+@light-btn-danger-bg: #d32f2f;
+@light-btn-danger-hover-bg: #b71c1c;
+@light-summary-bg: #ffffff;
+@light-summary-border: #e9ecef;
+@light-summary-success-fg: #00796b;
+@light-summary-duplicate-fg: #ff9e03;
+@light-summary-error-fg: #d32f2f;

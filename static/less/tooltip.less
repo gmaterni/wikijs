@@ -1,0 +1,73 @@
+@import "modules/variables.less";
+
+/**
+ * Tooltip dell'applicazione: unico motore HelpPopup (JS, attributo dichiarativo
+ * data-help="Titolo|Descrizione"). Due vesti: pill compatta (solo titolo) e
+ * card ricca (titolo + descrizione wrappata).
+ * Il vecchio sistema CSS data-tt / tt-* è stato rimosso (unificazione).
+ *
+ * @format
+ */
+
+/* ========= VARIABILI LESS ========= */
+@help-accent: #00bd97;
+@tt-radius: 6px; // Border-radius della pill compatta
+
+/* ========= HELP POPUP (Dark Material Style) ========= */
+@help-popup-bg: #323232;
+@help-popup-text: #e0e0e0;
+@help-popup-radius: 8px;
+@help-popup-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+@help-popup-font: 13px/1.5 "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+@help-popup-max-width: 280px;
+@help-popup-padding: 10px 14px;
+
+.help-popup-window {
+  position: fixed;
+  background: @help-popup-bg;
+  color: @help-popup-text;
+  font: @help-popup-font;
+  padding: @help-popup-padding;
+  border-radius: @help-popup-radius;
+  border: 1px solid lighten(@help-accent, 10%);
+  z-index: @z-tooltip;
+  pointer-events: none;
+  max-width: @help-popup-max-width;
+  box-shadow: @help-popup-shadow;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(4px);
+
+  strong {
+    color: lighten(@help-accent, 10%);
+  }
+
+  code {
+    background: rgba(255,255,255,0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+}
+
+.help-popup-window.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========= VARIANTI HELP POPUP (stesso motore, due vesti) ========= */
+
+// Pill compatta: solo titolo, monoriga (testi corti tipo "Chiudi")
+.help-popup-window.help-popup--compact {
+  padding: 4px 10px;
+  border-radius: @tt-radius;
+  white-space: nowrap;
+  max-width: none;
+}
+
+// Card ricca: titolo + descrizione wrappata (testi lunghi)
+.help-popup-window.help-popup--rich {
+  max-width: @help-popup-max-width;
+  white-space: normal;
+}

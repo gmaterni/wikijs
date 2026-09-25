@@ -1,0 +1,229 @@
+/** @format */
+
+// ===================================================================
+//  API KEY MANAGER — Finestra di gestione chiavi
+// ===================================================================
+// Nota: i colori bordo usano variabili fisse (dark) perché l'import
+// avviene fuori dal mixin .apply-theme(). I colori di sfondo e testo
+// ereditano dal tema tramite classi contestuali.
+
+@ak-border: #444;
+@ak-bg-form: #252526;
+@ak-bg-input: #2d2d2d;
+@ak-text: #e0e0e0;
+@ak-text-muted: #888;
+@ak-bg-provider: #1e1e1e;
+@ak-color-provider: #81c784;
+@ak-bg-btn-add: #009977;
+@ak-fg-btn-add: #fff;
+
+.ak-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  height: 100%;
+  min-width: 560px;
+}
+
+.ak-form {
+  margin-top: 5px;
+  padding: 10px;
+  border: 1px solid @ak-border;
+  border-radius: 5px;
+  background: @ak-bg-form;
+}
+
+.ak-form-row,
+.ak-form-row-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.ak-form-row {
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ak-form-row-inputs {
+  align-items: flex-end;
+}
+
+.ak-label {
+  display: block;
+  font-size: 0.8em;
+  margin-bottom: 0;
+  color: @ak-text;
+}
+
+.ak-grow {
+  flex-grow: 1;
+}
+
+.ak-grow-min {
+  flex-grow: 1;
+  min-width: 180px;
+}
+
+.ak-select {
+  padding: 3px 5px;
+  font-size: 0.85em;
+  background: @ak-bg-input;
+  color: @ak-text;
+  border: 1px solid @ak-border;
+  border-radius: 3px;
+}
+
+.ak-input-name {
+  padding: 3px 5px;
+  font-size: 0.85em;
+  width: 120px;
+  background: @ak-bg-input;
+  color: @ak-text;
+  border: 1px solid @ak-border;
+  border-radius: 3px;
+}
+
+.ak-input-key {
+  padding: 3px 5px;
+  font-size: 0.85em;
+  width: 100%;
+  box-sizing: border-box;
+  background: @ak-bg-input;
+  color: @ak-text;
+  border: 1px solid @ak-border;
+  border-radius: 3px;
+}
+
+.ak-btn-add {
+  padding: 4px 12px;
+  height: 24px;
+  line-height: 16px;
+  background: @ak-bg-btn-add;
+  color: @ak-fg-btn-add;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.85em;
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+}
+
+.ak-list-wrap {
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1px solid @ak-border;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.ak-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.ak-thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: @ak-bg-form;
+}
+
+.ak-th-radio {
+  width: 40px;
+  text-align: center;
+  padding: 4px;
+}
+
+.ak-th-name {
+  padding: 4px;
+}
+
+.ak-th-key {
+  padding: 4px;
+}
+
+.ak-th-del {
+  width: 30px;
+  text-align: center;
+  padding: 4px;
+}
+
+.ak-provider-row {
+  background: @ak-bg-provider;
+}
+
+.ak-provider-name {
+  padding: 4px 8px;
+  color: @ak-color-provider;
+  font-weight: bold;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  border-bottom: 1px solid @ak-border;
+}
+
+.ak-no-keys {
+  padding: 4px 15px;
+  font-style: italic;
+  color: @ak-text-muted;
+  font-size: 0.8em;
+}
+
+.ak-key-row {
+  border-bottom: 1px solid @ak-border;
+}
+
+.ak-key-row-active {
+  background: fade(#00bd97, 10%);
+  border-left: 3px solid #ffb74d;
+}
+
+.ak-cell-center {
+  text-align: center;
+  padding: 2px;
+}
+
+.ak-cell-name {
+  padding: 2px 8px;
+  font-size: 0.9em;
+}
+
+.ak-cell-name-active {
+  color: #ffb74d;
+  font-weight: bold;
+}
+
+.ak-cell-key {
+  padding: 2px 8px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.ak-cell-key-active {
+  color: @ak-text;
+}
+
+.ak-cell-key-inactive {
+  color: @ak-text-muted;
+}
+
+.ak-radio {
+  cursor: pointer;
+}
+
+.ak-btn-del {
+  padding: 0px 5px;
+  font-size: 10px;
+  line-height: 18px;
+  height: 20px;
+  min-width: 20px;
+}
+
+.ak-empty {
+  text-align: center;
+  padding: 20px;
+  color: @ak-text-muted;
+}
