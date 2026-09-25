@@ -275,7 +275,7 @@ const stopActiveClients = function () {
  * Sul rate limit (429) applica spaziatura adattiva e backoff crescente
  * fino a `MAX_RETRIES`; a esaurimento restituisce l'errore strutturato
  * al chiamante, che può fermare il job invece di moltiplicare le chiamate.
- * Ogni richiesta e ogni attesa sono riportate in `UaLog` (mai la chiave).
+ * L'esito di ogni richiesta è riportato in `UaLog` (mai la chiave).
  *
  * @param {object} req - Richiesta `{ purpose, messages, temperature?, maxTokens?, signal? }`.
  * @returns {Promise<object>} `{ text, usage }` in caso di successo, `{ error }` in caso di guasto.
@@ -330,8 +330,6 @@ const complete = async function (req) {
                 const abortedInWait = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
                 return abortedInWait;
             }
-            const attemptLabel = String(attempt) + "/" + String(MAX_RETRIES);
-            _log("LLM · " + label + " · " + purpose + " · tentativo " + attemptLabel);
             const started = Date.now();
             outcome = await client.sendRequest(payload, REQUEST_TIMEOUT);
             const elapsedMs = Date.now() - started;
@@ -353,8 +351,6 @@ const complete = async function (req) {
                     break;
                 }
                 const rateDelay = retryAfterMs !== null ? retryAfterMs : _backoffDelay(attempt);
-                const rateSeconds = String(Math.round(rateDelay / 1000));
-                _log("LLM · 429 · quota superata · attendo " + rateSeconds + " s");
                 const waitedRate = await _sleep(rateDelay, req.signal || null);
                 if (!waitedRate) {
                     console.error("complete: richiesta abortita");
@@ -369,9 +365,6 @@ const complete = async function (req) {
                 break;
             }
             const delay = RETRY_DELAYS[attempt - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
-            const errorCode = providerError && typeof providerError.code === "number" ? String(providerError.code) : "errore";
-            const delaySeconds = String(Math.round(delay / 1000));
-            _log("LLM · " + errorCode + " · riprovo tra " + delaySeconds + " s");
             const waited = await _sleep(delay, req.signal || null);
             if (!waited) {
                 console.error("complete: richiesta abortita");
