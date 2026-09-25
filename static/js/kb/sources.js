@@ -52,7 +52,8 @@ const listSources = async function (kbId) {
     } finally {
         db.close();
     }
-    return rows || [];
+    const result = rows || [];
+    return result;
 };
 
 /**

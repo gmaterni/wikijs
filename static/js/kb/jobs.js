@@ -198,7 +198,8 @@ const buildStagingEntry = function (jobId, sourceId, chunkIndex, kind, payload) 
 const countJobStaging = async function (db, jobId) {
     if (!db || typeof jobId !== "string") {
         console.error("countJobStaging: argomenti non validi");
-        return -1;
+        const invalid = -1;
+        return invalid;
     }
     const count = await runTx(db, ["staging"], "readonly", async function (stores) {
         const all = await storeGetAll(stores.staging);

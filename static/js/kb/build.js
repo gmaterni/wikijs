@@ -303,7 +303,8 @@ const kbBuild = async function (opts) {
     let report = null;
     try {
         report = await withKbLock(db, opts.kbId, async function () {
-            return await runBuildJob(db, opts, mode);
+            const outcome = await runBuildJob(db, opts, mode);
+            return outcome;
         });
     } finally {
         db.close();

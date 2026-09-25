@@ -33,7 +33,8 @@ const findContextStart = function (tail) {
             return start;
         }
     }
-    return -1;
+    const notFound = -1;
+    return notFound;
 };
 
 /**

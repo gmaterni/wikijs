@@ -81,6 +81,15 @@ const HELP_ATTR_DELIMITER = "|";
  */
 const LEGACY_DB_PREFIX = "Rag" + "Index";
 
+/** Lunghezza massima del kbId derivato dal nome di un archivio. */
+const KB_ID_MAX_CHARS = 64;
+
+/** Fallback del kbId quando il nome non produce slug. */
+const KB_ID_FALLBACK = "kb";
+
+/** Ritardo prima dell'avvio delle operazioni lunghe (millisecondi). */
+const DEFERRED_START_MS = 50;
+
 
 // ============================================================================
 // STATO DEL MODULO
@@ -830,7 +839,7 @@ const _actionLoadKnowledgeBaseAsync = async function(key) {
     }
 
     const name = key.slice(DATA_KEYS.KEY_KB_PRE.length);
-    const kbId = slugify(name, 64, "kb");
+    const kbId = slugify(name, KB_ID_MAX_CHARS, KB_ID_FALLBACK);
     const imported = await kbImport({ kbId: kbId, bundle: data.kbBundle, mode: "replace" });
     if (!imported) { await alert("ERRORE: importazione della Knowledge Base non riuscita."); return; }
 
@@ -923,39 +932,63 @@ export const wnds = {
 // ============================================================================
 
 /**
+ * Elimina un singolo database IndexedDB.
+ *
+ * @param {object} factory - `window.indexedDB`.
+ * @param {string} name - Nome del database.
+ * @returns {Promise<boolean>} Vero a richiesta completata.
+ */
+const _deleteKbDatabaseAsync = function(factory, name) {
+    const done = new Promise(function(resolve) {
+        const request = factory.deleteDatabase(name);
+        request.onsuccess = function() { resolve(true); };
+        request.onerror = function() {
+            console.error("_deleteKbDatabaseAsync:", request.error);
+            resolve(false);
+        };
+        request.onblocked = function() {
+            console.error("_deleteKbDatabaseAsync: database bloccato:", name);
+            resolve(false);
+        };
+    });
+    return done;
+};
+
+/**
  * Elimina i database delle KB (`wikijs:*`) e, se il browser espone
  * `indexedDB.databases()`, anche i database dell'applicazione precedente.
  *
  * @returns {Promise<boolean>} Vero a pulizia richiesta.
  */
-const _deleteAllKbDatabasesAsync = function() {
+const _deleteAllKbDatabasesAsync = async function() {
     const factory = window.indexedDB;
-    const done = new Promise(function(resolve) {
-        if (!factory || typeof factory.databases !== "function" || typeof factory.deleteDatabase !== "function") {
-            resolve(false);
-            return;
-        }
-        factory.databases().then(function(list) {
-            const names = (list || []).map(function(row) { return row.name; }).filter(function(name) {
-                return name && (name.startsWith("wikijs:") || name.startsWith(LEGACY_DB_PREFIX));
-            });
-            if (names.length === 0) { resolve(true); return; }
-            let remaining = names.length;
-            const step = function() {
-                remaining = remaining - 1;
-                if (remaining === 0) { resolve(true); }
-            };
-            names.forEach(function(name) {
-                const request = factory.deleteDatabase(name);
-                request.onsuccess = step;
-                request.onerror = step;
-                request.onblocked = step;
-            });
-        }).catch(function(error) {
-            console.error("_deleteAllKbDatabasesAsync:", error);
-            resolve(false);
+    if (!factory || typeof factory.databases !== "function" || typeof factory.deleteDatabase !== "function") {
+        const unavailable = false;
+        return unavailable;
+    }
+    let names = [];
+    try {
+        const list = await factory.databases();
+        const rows = list || [];
+        const allNames = rows.map(function(row) { return row.name; });
+        names = allNames.filter(function(name) {
+            const isKb = name && (name.startsWith("wikijs:") || name.startsWith(LEGACY_DB_PREFIX));
+            return isKb;
         });
+    } catch (error) {
+        console.error("_deleteAllKbDatabasesAsync:", error);
+        const failed = false;
+        return failed;
+    }
+    if (names.length === 0) {
+        const empty = true;
+        return empty;
+    }
+    const deletions = names.map(function(name) {
+        return _deleteKbDatabaseAsync(factory, name);
     });
+    await Promise.all(deletions);
+    const done = true;
     return done;
 };
 
@@ -980,6 +1013,115 @@ export const Commands = {
 };
 
 
+/**
+ * Raccoglie i documenti caricati che hanno testo valido.
+ *
+ * @returns {Promise<Array>} Documenti `{ name, text }` non vuoti.
+ */
+const _collectValidDocumentsAsync = async function() {
+    const docNames = await DocsMgr.names();
+    const documents = [];
+    for (let i = 0; i < docNames.length; i++) {
+        const content = await DocsMgr.doc(i);
+        documents.push({ name: docNames[i], text: content });
+    }
+    const validDocs = documents.filter(doc => doc.text && doc.text.trim().length > 0);
+    return validDocs;
+};
+
+/**
+ * Confronta i documenti con `kb_doclist` e chiede conferma all'utente.
+ * Elenco vuoto = prima costruzione (full), altrimenti incrementale (auto);
+ * il delta new/changed/error resta responsabilità del motore.
+ *
+ * @param {Array} validDocs - Documenti correnti `{ name, text }`.
+ * @param {Array} existingDoclist - Nomi dei documenti già elaborati.
+ * @returns {Promise<boolean>} Vero se la compilazione può partire.
+ */
+const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
+    const isFirstBuild = existingDoclist.length === 0;
+    if (isFirstBuild) {
+        const question = `Creare KB da ${validDocs.length} documenti?`;
+        const confirmed = await confirm(question);
+        return confirmed;
+    }
+    const kbId = await getKbId();
+    const sources = await listSources(kbId) || [];
+    const pendingDocs = sources.filter(row => isPending(row));
+    const pendingCount = pendingDocs.length;
+    if (pendingCount === 0) {
+        await alert("Tutti i documenti caricati sono già stati elaborati nella KB esistente. Nessun documento nuovo o modificato da elaborare.");
+        const blocked = false;
+        return blocked;
+    }
+    const processedCount = existingDoclist.length;
+    const question = `Aggiungere ${pendingCount} nuovo/i documento/i alla KB esistente (${processedCount} doc processati)?`;
+    const confirmed = await confirm(question);
+    return confirmed;
+};
+
+/**
+ * Allinea i marcatori UI allo stato della KB e aggiorna il badge.
+ *
+ * @param {string} kbId - Identificatore della KB.
+ * @param {Array} validDocs - Documenti correnti `{ name, text }`.
+ * @returns {Promise<number>} Numero di pagine della KB.
+ */
+const _syncKnowledgeMarkersAsync = async function(kbId, validDocs) {
+    const status = await kbStatus({ kbId: kbId });
+    const counts = status ? status.counts : {};
+    const doclist = validDocs.map(function(doc) { return doc.name; });
+    await syncKbMarkers(kbId, { counts: counts, doclist: doclist });
+    await updateActiveKbDisplay();
+    const pages = counts.pages ? counts.pages : 0;
+    return pages;
+};
+
+/**
+ * Esegue la compilazione della KB attiva e aggiorna marcatori e badge.
+ *
+ * @param {boolean} isFirstBuild - Vero alla prima costruzione (mode full).
+ * @param {Array} validDocs - Documenti correnti `{ name, text }`.
+ * @returns {Promise<void>} Al termine.
+ */
+const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
+    const signal = ragEngine.beginBuild();
+    try {
+        const kbId = await getKbId();
+        await kbInit({ kbId: kbId });
+        const mode = isFirstBuild ? "full" : "auto";
+        const report = await kbBuild({ kbId: kbId, mode: mode, signal: signal });
+        if (signal.aborted) {
+            const cancelled = new Error("Compilazione interrotta dall'utente");
+            cancelled.code = 499;
+            throw cancelled;
+        }
+        if (!report) {
+            await alert("ERRORE: compilazione della Knowledge Base non riuscita. Controllare console e provider LLM.");
+            return;
+        }
+        if (report.totals && report.totals.sources === 0) {
+            await alert("Nessun documento nuovo o modificato da elaborare.");
+            return;
+        }
+        const pages = await _syncKnowledgeMarkersAsync(kbId, validDocs);
+        let message = "";
+        if (isFirstBuild) {
+            message = `Knowledge Base creata: ${pages} pagine.`;
+        } else {
+            message = `Knowledge Base aggiornata: +${report.totals.sources} documento/i, ${pages} pagine totali.`;
+        }
+        await alert(message);
+    } catch (error) {
+        if (error && error.code === 499) return;
+        const errorText = error.message || error;
+        await alert(`ERRORE CRITICO:\n${errorText}`);
+    } finally {
+        ragEngine.endBuild();
+        _Spinner.hide();
+    }
+};
+
 // ============================================================================
 // API PUBBLICA - Input Utente (TextInput)
 // ============================================================================
@@ -998,75 +1140,19 @@ export const TextInput = {
     },
     createKnowledgeAsync: async function() {
         UaLog.log("Inizio creazione Knowledge Base...");
-        const docNames = await DocsMgr.names();
-        const documents = [];
-        for (let i = 0; i < docNames.length; i++) {
-            const content = await DocsMgr.doc(i);
-            documents.push({ name: docNames[i], text: content });
-        }
-        const validDocs = documents.filter(doc => doc.text && doc.text.trim().length > 0);
+        const validDocs = await _collectValidDocumentsAsync();
         if (validDocs.length === 0) { await alert("Nessun documento valido trovato."); return; }
 
-        // Confronto con kb_doclist: elenco vuoto = prima costruzione (full),
-        // altrimenti incrementale (auto). Il delta new/changed/error resta
-        // responsabilità del motore, che non effettua chiamate LLM se non
-        // c'è nulla da elaborare.
         const existingDoclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
         const isFirstBuild = existingDoclist.length === 0;
-
-        let pendingCount = validDocs.length;
-        if (!isFirstBuild) {
-            const kbId = await getKbId();
-            const sources = await listSources(kbId) || [];
-            pendingCount = sources.filter(function(row) { return isPending(row); }).length;
-            if (pendingCount === 0) {
-                await alert("Tutti i documenti caricati sono già stati elaborati nella KB esistente. Nessun documento nuovo o modificato da elaborare.");
-                return;
-            }
-        }
-
-        if (isFirstBuild) {
-            if (!await confirm(`Creare KB da ${validDocs.length} documenti?`)) return;
-        } else {
-            if (!await confirm(`Aggiungere ${pendingCount} nuovo/i documento/i alla KB esistente (${existingDoclist.length} doc processati)?`)) return;
-        }
+        const proceed = await _confirmKnowledgeBuildAsync(validDocs, existingDoclist);
+        if (!proceed) return;
 
         _Spinner.show();
         await UaSender.sendEventAsync("wikijs", "createKnowledge");
         setTimeout(async function() {
-            const signal = ragEngine.beginBuild();
-            try {
-                const kbId = await getKbId();
-                await kbInit({ kbId: kbId });
-                const report = await kbBuild({ kbId: kbId, mode: isFirstBuild ? "full" : "auto", signal: signal });
-                if (signal.aborted) {
-                    const cancelled = new Error("Compilazione interrotta dall'utente");
-                    cancelled.code = 499;
-                    throw cancelled;
-                }
-                if (!report) {
-                    await alert("ERRORE: compilazione della Knowledge Base non riuscita. Controllare console e provider LLM.");
-                    return;
-                }
-                if (report.totals && report.totals.sources === 0) {
-                    await alert("Nessun documento nuovo o modificato da elaborare.");
-                    return;
-                }
-                const status = await kbStatus({ kbId: kbId });
-                const doclist = validDocs.map(function(d) { return d.name; });
-                await syncKbMarkers(kbId, { counts: status ? status.counts : {}, doclist: doclist });
-                await updateActiveKbDisplay();
-                const pages = (status && status.counts) ? status.counts.pages : 0;
-                if (isFirstBuild) {
-                    await alert(`Knowledge Base creata: ${pages} pagine.`);
-                } else {
-                    await alert(`Knowledge Base aggiornata: +${report.totals.sources} documento/i, ${pages} pagine totali.`);
-                }
-            } catch (error) {
-                if (error && error.code === 499) return;
-                await alert(`ERRORE CRITICO:\n${error.message || error}`);
-            } finally { ragEngine.endBuild(); _Spinner.hide(); }
-        }, 50);
+            await _runKnowledgeBuildAsync(isFirstBuild, validDocs);
+        }, DEFERRED_START_MS);
     },
     _checkProviderReady: async function() {
         const config = LlmProvider.getConfig();
@@ -1112,9 +1198,10 @@ export const TextInput = {
             } catch (error) {
                 if (error && error.code === 499) return;
                 const errCode = error.code ? `[${error.code}] ` : "";
-                await alert(`ERRORE CRITICO:\n${errCode}${error.message || error}`);
+                const errorText = error.message || error;
+                await alert(`ERRORE CRITICO:\n${errCode}${errorText}`);
             } finally { _Spinner.hide(); }
-        }, 50);
+        }, DEFERRED_START_MS);
     },
     continueConversationAsync: async function() {
         if (!TextInput._inputEl) return;
@@ -1139,9 +1226,10 @@ export const TextInput = {
             } catch (error) {
                 if (error && error.code === 499) return;
                 const errCode = error.code ? `[${error.code}] ` : "";
-                await alert(`ERRORE CRITICO:\n${errCode}${error.message || error}`);
+                const errorText = error.message || error;
+                await alert(`ERRORE CRITICO:\n${errCode}${errorText}`);
             } finally { _Spinner.hide(); }
-        }, 50);
+        }, DEFERRED_START_MS);
     }
 };
 
@@ -1567,7 +1655,9 @@ const _actionLlmUpdateAsync = async function() {
             if (discoveredOnError && discoveredOnError.length > 0) {
                 await _showSelectLlm();
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("_actionLlmUpdateAsync:", e);
+        }
     }
 };
 

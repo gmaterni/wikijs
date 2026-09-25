@@ -136,7 +136,8 @@ const _lastUserMessage = function (thread) {
     const messages = Array.isArray(thread) ? thread : [];
     for (let i = messages.length - 1; i >= 0; i--) {
         if (messages[i] && messages[i].role === "user") {
-            return String(messages[i].content || "");
+            const content = String(messages[i].content || "");
+            return content;
         }
     }
     const empty = "";
@@ -176,7 +177,8 @@ export const ragEngine = {
      */
     beginBuild: function () {
         _buildController = new AbortController();
-        return _buildController.signal;
+        const signal = _buildController.signal;
+        return signal;
     },
 
     /**

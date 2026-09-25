@@ -78,6 +78,126 @@ const _pickAndReadFileAsync = async function() {
     return result;
 };
 
+/**
+ * Valida il contenuto di un file KB e individua il bundle del motore.
+ * Formati accettati: record d'archivio (`kbBundle` o `bundle`) e bundle diretto.
+ *
+ * @param {object} data - JSON letto dal file.
+ * @returns {Promise<object|null>} `{ bundle, isRawBundle }`, o null.
+ */
+const _validateKbFileAsync = async function(data) {
+    const bundle = data.kbBundle || data.bundle || null;
+    const isRawBundle = !bundle && Array.isArray(data.sources) && Array.isArray(data.pages) && Array.isArray(data.catalog);
+    if (bundle || isRawBundle) {
+        const result = { bundle: bundle, isRawBundle: isRawBundle };
+        return result;
+    }
+    if (data.chunks || data.serializedIndex) {
+        await alert("Errore: archivio in formato precedente non supportato. Ricreare la KB con «Crea» e archiviarla di nuovo.");
+    } else {
+        await alert("Errore: Il file selezionato non è una Knowledge Base valida.");
+    }
+    const invalid = null;
+    return invalid;
+};
+
+/**
+ * Chiede il nome della KB importata e lo normalizza per la chiave.
+ *
+ * @returns {Promise<string|null>} Nome normalizzato, o null se annullato.
+ */
+const _askKbImportNameAsync = async function() {
+    const rawName = await prompt("Inserisci un nome per la Knowledge Base importata:");
+    if (rawName === null) {
+        const cancelled = null;
+        return cancelled;
+    }
+    const name = String(rawName).trim();
+    if (name.length === 0) {
+        await alert("Errore: Nome non valido.");
+        const invalid = null;
+        return invalid;
+    }
+    const sanitizedName = name.replace(REGEX_NAME_CLEANER, "_").replace(/_+/g, "_");
+    return sanitizedName;
+};
+
+/**
+ * Controlla se la chiave esiste già e chiede conferma alla sovrascrittura.
+ *
+ * @param {string} key - Chiave `rag_kb_*` di destinazione.
+ * @param {string} name - Nome normalizzato della KB.
+ * @returns {Promise<boolean>} Vero se si può procedere.
+ */
+const _confirmKbOverwriteAsync = async function(key, name) {
+    const exists = await idbMgr.exists(key);
+    if (!exists) {
+        const free = true;
+        return free;
+    }
+    const question = `Esiste già una KB chiamata "${name}". Vuoi sovrascriverla?`;
+    const confirmed = await confirm(question);
+    return confirmed;
+};
+
+/**
+ * Costruisce il record d'archivio da salvare nella chiave `rag_kb_*`.
+ *
+ * @param {object} data - Record o bundle letto dal file.
+ * @param {object} bundle - Bundle del motore (`kbBundle`/`bundle`), o null.
+ * @returns {object} Record completo con `kbBundle`.
+ */
+const _buildKbArchiveRecord = function(data, bundle) {
+    if (data.kbBundle) {
+        return data;
+    }
+    const bundleValue = bundle || data;
+    const sources = Array.isArray(bundleValue.sources) ? bundleValue.sources : [];
+    const pages = Array.isArray(bundleValue.pages) ? bundleValue.pages : [];
+    const docNames = sources.map(function(row) { return row.name; });
+    const record = {
+        chunks: { sources: sources.length, pages: pages.length },
+        serializedIndex: "",
+        doclist: docNames,
+        childchunks: {},
+        kbBundle: bundleValue,
+        kbId: ""
+    };
+    return record;
+};
+
+/**
+ * Legge e valida il file KB, chiede nome e conferma, prepara la scrittura.
+ *
+ * @returns {Promise<object|null>} `{ key, record, name }`, o null se annullato.
+ */
+const _prepareKbImportAsync = async function() {
+    const data = await _pickAndReadFileAsync();
+    if (!data) {
+        const empty = null;
+        return empty;
+    }
+    const validated = await _validateKbFileAsync(data);
+    if (!validated) {
+        const empty = null;
+        return empty;
+    }
+    const sanitizedName = await _askKbImportNameAsync();
+    if (!sanitizedName) {
+        const empty = null;
+        return empty;
+    }
+    const key = `${DATA_KEYS.KEY_KB_PRE}${sanitizedName}`;
+    const proceed = await _confirmKbOverwriteAsync(key, sanitizedName);
+    if (!proceed) {
+        const empty = null;
+        return empty;
+    }
+    const record = _buildKbArchiveRecord(data, validated.bundle);
+    const prepared = { key: key, record: record, name: sanitizedName };
+    return prepared;
+};
+
 // ============================================================================
 // API PUBBLICA
 // ============================================================================
@@ -144,70 +264,11 @@ export const BackupMgr = {
         let importedName = null;
 
         try {
-            const data = await _pickAndReadFileAsync();
-
-            if (!data) {
-                const empty = null;
-                return empty;
+            const prepared = await _prepareKbImportAsync();
+            if (prepared) {
+                await idbMgr.create(prepared.key, prepared.record);
+                importedName = prepared.name;
             }
-
-            // Fail Fast: validazione struttura KB.
-            // Formati accettati: record d'archivio del motore WikiJS
-            // (`kbBundle` o `bundle`) e bundle esportato diretto.
-            const bundle = data.kbBundle || data.bundle || null;
-            const isRawBundle = !bundle && Array.isArray(data.sources) && Array.isArray(data.pages) && Array.isArray(data.catalog);
-            if (!bundle && !isRawBundle) {
-                if (data.chunks || data.serializedIndex) {
-                    await alert("Errore: archivio in formato precedente non supportato. Ricreare la KB con «Crea» e archiviarla di nuovo.");
-                } else {
-                    await alert("Errore: Il file selezionato non è una Knowledge Base valida.");
-                }
-                const empty = null;
-                return empty;
-            }
-
-            const rawName = await prompt("Inserisci un nome per la Knowledge Base importata:");
-            
-            // Gestione annullamento prompt o stringa vuota
-            if (rawName === null) {
-                const empty = null;
-                return empty;
-            }
-
-            const name = String(rawName).trim();
-            if (name.length === 0) {
-                await alert("Errore: Nome non valido.");
-                const empty = null;
-                return empty;
-            }
-
-            const sanitizedName = name.replace(REGEX_NAME_CLEANER, "_").replace(/_+/g, "_");
-            const key = `${DATA_KEYS.KEY_KB_PRE}${sanitizedName}`;
-
-            // Controllo sovrascrittura
-            const exists = await idbMgr.exists(key);
-            if (exists) {
-                const confirmOverwrite = await confirm(`Esiste già una KB chiamata "${sanitizedName}". Vuoi sovrascriverla?`);
-                if (!confirmOverwrite) {
-                    const empty = null;
-                return empty;
-                }
-            }
-
-            const bundleValue = bundle || data;
-            const sources = Array.isArray(bundleValue.sources) ? bundleValue.sources : [];
-            const pages = Array.isArray(bundleValue.pages) ? bundleValue.pages : [];
-            const record = data.kbBundle ? data : {
-                chunks: { sources: sources.length, pages: pages.length },
-                serializedIndex: "",
-                doclist: sources.map(function(row) { return row.name; }),
-                childchunks: {},
-                kbBundle: bundleValue,
-                kbId: ""
-            };
-            await idbMgr.create(key, record);
-            importedName = sanitizedName;
-
         } catch (error) {
             console.error("BackupMgr.importKbAsync: errore durante l'importazione", error);
             importedName = null;

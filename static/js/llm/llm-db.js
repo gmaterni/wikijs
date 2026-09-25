@@ -20,8 +20,11 @@ import { WebId } from "../services/webuser_id.js";
 // COSTANTI
 // ============================================================================
 
+/** Identificativo utente, condiviso con il database applicativo. */
+const USER_ID = WebId.get();
+
 /** Nome del database: isolato per utente come il DB applicativo. */
-const DB_NAME = `wikijs_llm_${WebId.get()}`;
+const DB_NAME = `wikijs_llm_${USER_ID}`;
 
 /** Versione dello schema Dexie. */
 const DB_VERSION = 1;

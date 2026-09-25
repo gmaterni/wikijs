@@ -54,7 +54,8 @@ const normalizeQuestion = function (raw) {
 const localSearch = function (rows, question, limit) {
     const scored = [];
     if (!Array.isArray(rows) || typeof question !== "string") {
-        return [];
+        const empty = [];
+        return empty;
     }
     const raw = normalizeForCompare(question).split(" ");
     const terms = [];
