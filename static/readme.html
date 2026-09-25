@@ -246,7 +246,7 @@ window.kbQuery / kbStatus / kbExport / kbImport / kbLint / kbGetId</code></pre>
             <p>L'adapter LLM è iniettabile: <code>activateProviderAdapter()</code> usa <code>window.WikiJsLlm</code> (ospite) o il provider configurato; <code>setAdapter(createMockAdapter())</code> da <code>js/kb/index.js</code> abilita le prove deterministiche. Gli invarianti I1–I10 si verificano con <code>kbStatus().invariants</code>.</p>
 
             <h2>LLM</h2>
-            <p>Provider e modelli si scelgono dal pulsante <strong>LLM</strong> o dal menu. Le chiamate ritentano 3 volte sui codici transitori (mai su 429), onorano <code>signal</code> e propagano l'<code>usage</code>. Senza adapter la query degrada a <code>offline</code> e la build fallisce in modo dichiarato. Gli eventi d'uso sono inviati con nome applicazione <code>wikijs</code> all'endpoint <code>https://wwwanalyzer-backend.workerua.workers.dev</code> (disattivati in locale).</p>
+            <p>Provider e modelli si scelgono dal pulsante <strong>LLM</strong> o dal menu. Le chiamate ritentano 3 volte sui codici transitori; sul 429 applicano backoff e spaziatura adattiva e, se persiste, interrompono il job con stato <code>rate_limited</code>. Onorano <code>signal</code> e propagano l'<code>usage</code>. Senza adapter la query degrada a <code>offline</code> e la build fallisce in modo dichiarato. Gli eventi d'uso sono inviati con nome applicazione <code>wikijs</code> all'endpoint <code>https://wwwanalyzer-backend.workerua.workers.dev</code> (disattivati in locale).</p>
 
             <h2>Documentazione</h2>
             <ul>

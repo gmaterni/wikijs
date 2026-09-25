@@ -117,11 +117,18 @@ Dipendenze interne al motore: `index → {api, adapter, mock, sources, params}`;
 **Adapter LLM** (`js/kb/adapter.js`, iniettabile):
 
 ```js
+// adapter iniettato (ospite o provider): { text, usage } oppure null/eccezione
 complete({ purpose, messages, temperature?, maxTokens?, model?, signal? })
   → Promise<{ text: string, usage: { inputTokens?, outputTokens? } } | null>
+// complete() del motore normalizza l'esito: { ok, text, usage, error }
+// error = { type, code, message, retryAfterMs? }; code 429 = quota esaurita
 // purpose ∈ extract | merge | select | answer | lint
 // model è un nome logico (forte|rapido|medio): il bridge usa SEMPRE il modello attivo
 ```
+
+Sul `429` le chiamate applicano backoff con spaziatura adattiva; se persiste,
+la build interrompe il job (`error: "rate_limited"`). Il retry di correzione
+scatta solo su risposta non conforme, mai su guasti di trasporto.
 
 Priorità: `window.WikiJsLlm.complete` (ospite) → `llm_provider_adapter` → nessun adapter
 (la query degrada a `offline`, la build fallisce in modo dichiarato).

@@ -34,8 +34,10 @@ solo i nomi in chiaro). La selezione provider/modello resta in
 remoti (`static/js/llmlist/`), li vota con probe e li persiste in
 `wikijs_llm_<userId>` (store `discovered-models`/`selected-models`);
 `cerebras`/`siliconflow` sono esclusi (client orfani fuori registry, senza
-catalogo). Le chiamate ritentano 3 volte su `408,500,502,503,504` (mai su
-`429`), onorano `signal` e propagano l'`usage` reale. In alternativa l'adapter
+catalogo). Le chiamate ritentano 3 volte su `408,500,502,503,504`; sul `429`
+applicano un backoff crescente con spaziatura adattiva e, se persiste,
+interrompono il job (`rate_limited`) invece di moltiplicare le richieste.
+Onorano `signal` e propagano l'`usage` reale. In alternativa l'adapter
 va iniettato dall'ospite (`window.WikiJsLlm.complete` oppure `setAdapter` da
 console); senza LLM restano attivi `offline` e selezione locale.
 

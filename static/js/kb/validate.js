@@ -45,8 +45,9 @@ const stripCodeFences = function (text) {
  */
 const parseJson = function (text) {
     const failure = { ok: false, value: null, error: "risposta non JSON" };
-    if (typeof text !== "string") {
-        return failure;
+    if (typeof text !== "string" || text.trim().length === 0) {
+        const missing = { ok: false, value: null, error: "risposta assente" };
+        return missing;
     }
     let value = null;
     try {

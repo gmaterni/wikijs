@@ -19,7 +19,7 @@ import { slugify, isSlug, normalizeForCompare, sha256Hex, extractLinks } from ".
 import { chunkText } from "./chunk.js";
 import { parseJson, validateExtract, MAX_QUOTES_STORED } from "./validate.js";
 import { verifyPageQuotes } from "./quotes.js";
-import { complete as llmComplete } from "./adapter.js";
+import { complete as llmComplete, describeError } from "./adapter.js";
 import { DEFAULT_PARAMS, DEFAULT_ROUTING, DEFAULT_BUDGET } from "./params.js";
 
 const SOURCE_STATUSES_TODO = ["new", "changed", "error"];
@@ -135,46 +135,81 @@ const buildExtractMessages = function (chunk, params) {
 };
 
 /**
+ * Compone l'esito di un chunk non estraibile per guasto LLM.
+ *
+ * @param {object} failure - Esito `{ error }` dell'adapter.
+ * @param {number} calls - Chiamate già effettuate.
+ * @param {object} usage - Conteggi token accumulati.
+ * @returns {object} Esito di fallimento per `extractChunk`.
+ */
+const extractFailure = function (failure, calls, usage) {
+    const error = failure ? failure.error : null;
+    const code = error ? error.code : null;
+    const reason = "estrazione non eseguita: " + describeError(error);
+    const failed = {
+        pages: [],
+        calls: calls,
+        failed: true,
+        rateLimited: code === 429,
+        aborted: code === 499,
+        errors: [reason],
+        usage: usage
+    };
+    return failed;
+};
+
+/**
  * Esegue l'estrazione di un chunk con un retry su errore di validazione.
+ *
+ * Il retry di correzione scatta solo se il modello ha risposto con un
+ * contenuto non conforme; un guasto LLM (rete, quota, abort) chiude subito
+ * il chunk per non moltiplicare le chiamate.
  *
  * @param {object} adapter - Adapter o null (usa quello iniettato).
  * @param {object} routing - Parametri di routing per `extract`.
  * @param {Array} messages - Messaggi del prompt.
  * @param {object} params - Parametri operativi.
  * @param {object} signal - Segnale di abort opzionale.
- * @returns {Promise<object>} `{ pages, calls, failed, errors, usage }`.
+ * @returns {Promise<object>} `{ pages, calls, failed, rateLimited, aborted, errors, usage }`.
  */
 const extractChunk = async function (adapter, routing, messages, params, signal) {
-    const complete = adapter ? adapter.complete : llmComplete;
     let calls = 0;
     const usage = { inputTokens: 0, outputTokens: 0 };
-    const first = await complete({ purpose: "extract", messages: messages, temperature: routing.temperature, maxTokens: routing.maxTokens, model: routing.model, signal: signal });
+    const first = await llmComplete({ purpose: "extract", messages: messages, temperature: routing.temperature, maxTokens: routing.maxTokens, model: routing.model, signal: signal }, adapter || null);
     calls = calls + 1;
-    if (first && first.usage) {
+    if (!first.ok) {
+        const failedFirst = extractFailure(first, calls, usage);
+        return failedFirst;
+    }
+    if (first.usage) {
         usage.inputTokens = usage.inputTokens + (first.usage.inputTokens || 0);
         usage.outputTokens = usage.outputTokens + (first.usage.outputTokens || 0);
     }
-    const parsed = parseJson(first ? first.text : "");
-    let checked = parsed.ok ? validateExtract(parsed.value, params) : { ok: false, pages: [], errors: [parsed.error] };
+    const parsed = parseJson(first.text);
+    const checked = parsed.ok ? validateExtract(parsed.value, params) : { ok: false, pages: [], errors: [parsed.error] };
     if (checked.ok) {
-        const done = { pages: checked.pages, calls: calls, failed: false, errors: [], usage: usage };
+        const done = { pages: checked.pages, calls: calls, failed: false, rateLimited: false, aborted: false, errors: [], usage: usage };
         return done;
     }
     const correction = "La risposta precedente non è valida: " + checked.errors.join("; ") + ". Rispondi SOLO con JSON valido secondo lo schema.";
     const retryMessages = messages.concat([{ role: "user", content: correction }]);
-    const second = await complete({ purpose: "extract", messages: retryMessages, temperature: routing.temperature, maxTokens: routing.maxTokens, model: routing.model, signal: signal });
+    const second = await llmComplete({ purpose: "extract", messages: retryMessages, temperature: routing.temperature, maxTokens: routing.maxTokens, model: routing.model, signal: signal }, adapter || null);
     calls = calls + 1;
-    if (second && second.usage) {
+    if (!second.ok) {
+        const failedRetry = extractFailure(second, calls, usage);
+        return failedRetry;
+    }
+    if (second.usage) {
         usage.inputTokens = usage.inputTokens + (second.usage.inputTokens || 0);
         usage.outputTokens = usage.outputTokens + (second.usage.outputTokens || 0);
     }
-    const reparsed = parseJson(second ? second.text : "");
+    const reparsed = parseJson(second.text);
     const rechecked = reparsed.ok ? validateExtract(reparsed.value, params) : { ok: false, pages: [], errors: [reparsed.error] };
     if (rechecked.ok) {
-        const done = { pages: rechecked.pages, calls: calls, failed: false, errors: [], usage: usage };
+        const done = { pages: rechecked.pages, calls: calls, failed: false, rateLimited: false, aborted: false, errors: [], usage: usage };
         return done;
     }
-    const failed = { pages: [], calls: calls, failed: true, errors: rechecked.errors, usage: usage };
+    const failed = { pages: [], calls: calls, failed: true, rateLimited: false, aborted: false, errors: rechecked.errors, usage: usage };
     return failed;
 };
 
@@ -368,6 +403,7 @@ const runBuildJob = async function (db, opts, mode) {
     const notes = [];
     let aborted = false;
     let budgetHit = false;
+    let rateLimited = false;
     for (const source of selected.sources) {
         if (opts.signal && opts.signal.aborted) {
             aborted = true;
@@ -384,6 +420,12 @@ const runBuildJob = async function (db, opts, mode) {
         for (const note of outcome.notes) {
             notes.push(note);
         }
+        if (outcome.rateLimited) {
+            rateLimited = true;
+            notes.push("build interrotta: quota LLM esaurita");
+            console.error("runBuildJob: quota LLM esaurita, job interrotto");
+            break;
+        }
         if (outcome.budgetHit) {
             budgetHit = true;
             break;
@@ -397,8 +439,18 @@ const runBuildJob = async function (db, opts, mode) {
         }
     }
     const finished = Date.now();
-    const status = aborted ? "cancelled" : (budgetHit ? "error" : "done");
-    const error = aborted ? "aborted" : (budgetHit ? "budget_exhausted" : null);
+    let status = "done";
+    let error = null;
+    if (aborted) {
+        status = "cancelled";
+        error = "aborted";
+    } else if (rateLimited) {
+        status = "error";
+        error = "rate_limited";
+    } else if (budgetHit) {
+        status = "error";
+        error = "budget_exhausted";
+    }
     await runTx(db, ["jobs", "staging", "logs", "meta"], "readwrite", async function (stores) {
         const updated = Object.assign({}, job, { status: status, error: error, progress: { phase: "done", done: totals.sources, total: selected.sources.length } });
         await putJobRecord(stores.jobs, updated);
@@ -442,6 +494,7 @@ const ingestSource = async function (db, job, source, pageIndex, params, routes,
     let quotesFailed = 0;
     const notes = [];
     let budgetHit = false;
+    let rateLimited = false;
     let createdThisDoc = 0;
     for (const chunk of chunks) {
         if (opts.signal && opts.signal.aborted) {
@@ -484,6 +537,15 @@ const ingestSource = async function (db, job, source, pageIndex, params, routes,
                 await runTx(db, ["staging"], "readwrite", async function (stores) {
                     await storePut(stores.staging, errorEntry);
                 });
+                if (extracted.aborted) {
+                    break;
+                }
+                if (extracted.rateLimited) {
+                    rateLimited = true;
+                    notes.push("quota LLM esaurita: ingestione interrotta per " + source.sourceId);
+                    console.error("ingestSource: quota LLM esaurita (" + source.sourceId + ")");
+                    break;
+                }
                 continue;
             }
             payload = { pages: extracted.pages };
@@ -584,7 +646,7 @@ const ingestSource = async function (db, job, source, pageIndex, params, routes,
     if (!committed) {
         notes.push("commit fallito per " + source.sourceId + ", ripresa dallo staging");
     }
-    const outcome = { summary: summary, notes: notes, calls: calls, inputTokens: inputTokens, outputTokens: outputTokens, pagesCreated: pagesCreated, pagesUpdated: pagesUpdated, budgetHit: budgetHit };
+    const outcome = { summary: summary, notes: notes, calls: calls, inputTokens: inputTokens, outputTokens: outputTokens, pagesCreated: pagesCreated, pagesUpdated: pagesUpdated, budgetHit: budgetHit, rateLimited: rateLimited };
     return outcome;
 };
 

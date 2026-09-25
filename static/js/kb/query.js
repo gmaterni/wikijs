@@ -17,7 +17,7 @@ import { getMeta } from "./jobs.js";
 import { slugify, normalizeForCompare, makeOutputId } from "./ids.js";
 import { parseJson, validateSelect, validateAnswer, extractAnswerLinks } from "./validate.js";
 import { verifyQuote } from "./quotes.js";
-import { complete as llmComplete } from "./adapter.js";
+import { complete as llmComplete, describeError } from "./adapter.js";
 import { DEFAULT_PARAMS, DEFAULT_ROUTING } from "./params.js";
 
 // Stopword italiane minime per la selezione locale.
@@ -215,7 +215,9 @@ const runQueryJob = async function (db, opts, mode, question) {
     const routing = await getMeta(db, "llmRouting");
     const active = Object.assign({}, DEFAULT_PARAMS, params || {});
     const routes = Object.assign({}, DEFAULT_ROUTING, routing || {});
-    const complete = opts.adapter ? opts.adapter.complete : llmComplete;
+    const complete = function (req) {
+        return llmComplete(req, opts.adapter || null);
+    };
     const notes = [];
     let calls = 0;
     let usedMode = mode;
@@ -393,7 +395,10 @@ const selectWithLlm = async function (catalog, question, params, routes, complet
         })));
         const first = await complete({ purpose: "select", messages: [{ role: "system", content: "Seleziona le categorie pertinenti. Rispondi SOLO con JSON." }, { role: "user", content: "DOMANDA: " + question + "\nCATEGORIE: " + categories.join(", ") + '\nFORMATO: {"categories": [...]}' }], temperature: routes.select.temperature, maxTokens: routes.select.maxTokens, model: routes.select.model, signal: signal });
         calls = calls + 1;
-        const parsed = parseJson(first ? first.text : "");
+        if (!first.ok) {
+            notes.push("selezione categorie non eseguita: " + describeError(first.error));
+        }
+        const parsed = parseJson(first.ok ? first.text : "");
         const wanted = parsed.ok && Array.isArray(parsed.value.categories) ? parsed.value.categories : [];
         shortlist = catalog.filter(function (row) {
             return wanted.includes(row.category);
@@ -405,9 +410,10 @@ const selectWithLlm = async function (catalog, question, params, routes, complet
     const shortText = renderCatalog(shortlist);
     const second = await complete({ purpose: "select", messages: [{ role: "system", content: "Seleziona le pagine dal catalog. Rispondi SOLO con JSON." }, { role: "user", content: "DOMANDA: " + question + "\nCATALOG:\n" + shortText + '\nFORMATO: {"slugs": [...], "reasons": {}, "missing": false}' }], temperature: routes.select.temperature, maxTokens: routes.select.maxTokens, model: routes.select.model, signal: signal });
     calls = calls + 1;
-    const reparsed = parseJson(second ? second.text : "");
+    const reparsed = parseJson(second.ok ? second.text : "");
     if (!reparsed.ok) {
-        notes.push("select non valida: fallback locale");
+        const reason = second.ok ? "select non valida: fallback locale" : "select non eseguita: " + describeError(second.error);
+        notes.push(reason);
         const outcome = { slugs: [], discarded: [], calls: calls, notes: notes };
         return outcome;
     }
@@ -517,18 +523,26 @@ const composeAnswer = async function (question, pages, params, routes, complete,
     const system = "Sei un assistente che risponde SOLO con le pagine fornite, in italiano; cita [[slug]] per ogni affermazione; se l'informazione non c'è, dichiaralo; non usare conoscenza esterna.";
     const first = await complete({ purpose: "answer", messages: [{ role: "system", content: system }, { role: "user", content: prompt }], temperature: routes.answer.temperature, maxTokens: routes.answer.maxTokens, model: routes.answer.model, signal: signal });
     let calls = 1;
-    const parsed = parseJson(first ? first.text : "");
+    const parsed = parseJson(first.ok ? first.text : "");
     let checked = parsed.ok ? validateAnswer(parsed.value, loadedSlugs) : { ok: false, errors: [parsed.error] };
-    if (!checked.ok) {
+    let retryError = null;
+    if (!checked.ok && first.ok) {
         const correction = "La risposta non è valida: " + checked.errors.join("; ") + ". Rispondi SOLO con JSON valido usando solo le pagine caricate.";
         const second = await complete({ purpose: "answer", messages: [{ role: "system", content: system }, { role: "user", content: prompt }, { role: "user", content: correction }], temperature: routes.answer.temperature, maxTokens: routes.answer.maxTokens, model: routes.answer.model, signal: signal });
         calls = calls + 1;
-        const reparsed = parseJson(second ? second.text : "");
+        retryError = second.ok ? null : second.error;
+        const reparsed = parseJson(second.ok ? second.text : "");
         checked = reparsed.ok ? validateAnswer(reparsed.value, loadedSlugs) : { ok: false, errors: [reparsed.error] };
     }
     if (!checked.ok) {
         const marked = typeof parsed.value?.answer === "string" ? markInvalidLinks(parsed.value.answer, loadedSlugs) : "";
-        notes.push("risposta invalida dopo retry: " + checked.errors.join("; "));
+        if (!first.ok) {
+            notes.push("risposta non ottenuta: " + describeError(first.error));
+        } else if (retryError) {
+            notes.push("retry non eseguito: " + describeError(retryError));
+        } else {
+            notes.push("risposta invalida dopo retry: " + checked.errors.join("; "));
+        }
         const failed = { failed: true, answer: marked, usedPages: [], missing: false, citations: [], calls: calls, notes: notes };
         return failed;
     }

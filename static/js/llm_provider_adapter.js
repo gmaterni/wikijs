@@ -30,8 +30,22 @@ const RETRYABLE_CODES = [408, 500, 502, 503, 504];
 // Attese tra i tentativi, in millisecondi.
 const RETRY_DELAYS = [1000, 2000];
 
+// Backoff dedicato al rate limit: base, tetto e variazione casuale (±20%).
+const RATE_LIMIT_BASE_DELAY_MS = 5000;
+const RATE_LIMIT_MAX_DELAY_MS = 60000;
+const RATE_LIMIT_JITTER = 0.2;
+
+// Spaziatura adattiva fra richieste consecutive: cresce sui 429,
+// si riduce a ogni successo e si azzera sotto la soglia minima.
+const SPACING_MIN_MS = 4000;
+const SPACING_MAX_MS = 60000;
+
 // Client attivi, per lo STOP immediato.
 const _activeClients = new Set();
+
+// Stato della spaziatura adattiva, condiviso da tutte le chiamate.
+let _spacingMs = 0;
+let _nextSlotTs = 0;
 
 /**
  * Indica se un errore merita un nuovo tentativo.
@@ -122,6 +136,99 @@ const _sleep = function (ms, signal) {
 };
 
 /**
+ * Costruisce un esito di errore nel formato atteso dall'adapter KB.
+ *
+ * @param {string} type - Tipo di errore.
+ * @param {number|null} code - Codice HTTP o applicativo.
+ * @param {string} message - Messaggio leggibile.
+ * @returns {object} `{ error: { type, code, message } }`.
+ */
+const _failure = function (type, code, message) {
+    const error = { type: type, code: code, message: message };
+    const failure = { error: error };
+    return failure;
+};
+
+/**
+ * Calcola l'attesa del prossimo tentativo con backoff esponenziale e jitter.
+ *
+ * @param {number} attempt - Numero del tentativo appena fallito (1-based).
+ * @returns {number} Millisecondi di attesa.
+ */
+const _backoffDelay = function (attempt) {
+    const exponential = RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+    const capped = Math.min(exponential, RATE_LIMIT_MAX_DELAY_MS);
+    const jitter = 1 + ((Math.random() * 2) - 1) * RATE_LIMIT_JITTER;
+    const delay = Math.round(capped * jitter);
+    return delay;
+};
+
+/**
+ * Estrae l'attesa suggerita dal provider (`Retry-After`), se esposta.
+ *
+ * Lo stack LLM attuale restituisce il corpo JSON come `response` e non
+ * gli header: il valore è quindi normalmente null e si usa il backoff.
+ *
+ * @param {object|null} outcome - Esito grezzo del client.
+ * @returns {number|null} Millisecondi suggeriti, o null.
+ */
+const _retryAfterMs = function (outcome) {
+    const response = outcome ? outcome.response : null;
+    if (!response || !response.headers || typeof response.headers.get !== "function") {
+        return null;
+    }
+    const header = response.headers.get("retry-after");
+    if (!header) {
+        return null;
+    }
+    const seconds = Number(header);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+        const fromSeconds = Math.round(seconds * 1000);
+        return fromSeconds;
+    }
+    const date = Date.parse(header);
+    if (Number.isNaN(date)) {
+        return null;
+    }
+    const fromDate = Math.max(0, date - Date.now());
+    return fromDate;
+};
+
+/**
+ * Attende il turno di invio rispettando la spaziatura adattiva.
+ *
+ * @param {*} signal - `AbortSignal`, o null.
+ * @returns {Promise<boolean>} Vero se il turno è disponibile.
+ */
+const _waitForSlot = async function (signal) {
+    const now = Date.now();
+    const waitMs = _nextSlotTs > now ? _nextSlotTs - now : 0;
+    _nextSlotTs = now + waitMs + _spacingMs;
+    const waited = await _sleep(waitMs, signal);
+    return waited;
+};
+
+/**
+ * Aumenta la spaziatura dopo un rate limit.
+ *
+ * @returns {void}
+ */
+const _raiseSpacing = function () {
+    const doubled = _spacingMs > 0 ? _spacingMs * 2 : SPACING_MIN_MS;
+    _spacingMs = Math.min(Math.max(doubled, SPACING_MIN_MS), SPACING_MAX_MS);
+};
+
+/**
+ * Dimezza la spaziatura dopo un successo, azzerandola sotto la soglia minima.
+ *
+ * @returns {void}
+ */
+const _decaySpacing = function () {
+    const halved = Math.floor(_spacingMs / 2);
+    _spacingMs = halved >= SPACING_MIN_MS ? halved : 0;
+};
+
+/**
  * Annulla tutte le chiamate in corso (STOP della UI).
  *
  * @returns {void}
@@ -138,27 +245,35 @@ const stopActiveClients = function () {
 /**
  * Invoca il provider attivo nel formato dell'adapter WikiJS.
  *
+ * Sul rate limit (429) applica spaziatura adattiva e backoff crescente
+ * fino a `MAX_RETRIES`; a esaurimento restituisce l'errore strutturato
+ * al chiamante, che può fermare il job invece di moltiplicare le chiamate.
+ *
  * @param {object} req - Richiesta `{ purpose, messages, temperature?, maxTokens?, signal? }`.
- * @returns {Promise<object|null>} `{ text, usage }`, o null in caso di errore.
+ * @returns {Promise<object>} `{ text, usage }` in caso di successo, `{ error }` in caso di guasto.
  */
 const complete = async function (req) {
     if (!req || typeof req !== "object" || !Array.isArray(req.messages) || req.messages.length === 0) {
         console.error("complete: richiesta non valida");
-        return null;
+        const invalidRequest = _failure("InvalidRequest", null, "richiesta non valida");
+        return invalidRequest;
     }
     if (req.signal && req.signal.aborted) {
         console.error("complete: richiesta abortita");
-        return null;
+        const abortedBeforeStart = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
+        return abortedBeforeStart;
     }
     const config = LlmProvider.getConfig();
     if (!config || !config.provider || !config.model) {
         console.error("complete: provider non configurato");
-        return null;
+        const noConfig = _failure("ConfigurationError", null, "provider non configurato");
+        return noConfig;
     }
     const client = await LlmProvider.getClientFor(config.provider, config.model);
     if (!client) {
         console.error("complete: client non disponibile");
-        return null;
+        const noClient = _failure("ClientError", null, "client non disponibile");
+        return noClient;
     }
     const payload = createLlmPayload(config.model, req.messages, { temperature: req.temperature, max_tokens: req.maxTokens });
     let outcome = null;
@@ -169,14 +284,40 @@ const complete = async function (req) {
             attempt = attempt + 1;
             if (req.signal && req.signal.aborted) {
                 console.error("complete: richiesta abortita");
-                return null;
+                const abortedInLoop = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
+                return abortedInLoop;
+            }
+            const slot = await _waitForSlot(req.signal || null);
+            if (!slot) {
+                console.error("complete: richiesta abortita");
+                const abortedInWait = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
+                return abortedInWait;
             }
             outcome = await client.sendRequest(payload, REQUEST_TIMEOUT);
             if (outcome && outcome.ok === true) {
+                _decaySpacing();
                 break;
             }
-            const retryable = _isRetryable(outcome ? outcome.error : null);
+            const providerError = outcome ? outcome.error : null;
             const lastAttempt = attempt >= MAX_RETRIES;
+            const rateLimited = Boolean(providerError && providerError.code === 429);
+            if (rateLimited) {
+                _raiseSpacing();
+                const retryAfterMs = _retryAfterMs(outcome);
+                const tooLong = retryAfterMs !== null && retryAfterMs > RATE_LIMIT_MAX_DELAY_MS;
+                if (lastAttempt || tooLong) {
+                    break;
+                }
+                const rateDelay = retryAfterMs !== null ? retryAfterMs : _backoffDelay(attempt);
+                const waitedRate = await _sleep(rateDelay, req.signal || null);
+                if (!waitedRate) {
+                    console.error("complete: richiesta abortita");
+                    const abortedInBackoff = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
+                    return abortedInBackoff;
+                }
+                continue;
+            }
+            const retryable = _isRetryable(providerError);
             if (!retryable || lastAttempt) {
                 break;
             }
@@ -184,24 +325,34 @@ const complete = async function (req) {
             const waited = await _sleep(delay, req.signal || null);
             if (!waited) {
                 console.error("complete: richiesta abortita");
-                return null;
+                const abortedInRetry = _failure("CancellationError", 499, "richiesta interrotta dall'utente");
+                return abortedInRetry;
             }
         }
     } catch (error) {
         console.error("complete:", error);
-        return null;
+        const message = error && error.message ? error.message : "eccezione client";
+        const thrown = _failure("AdapterError", null, message);
+        return thrown;
     } finally {
         _activeClients.delete(client);
     }
     if (!outcome || outcome.ok !== true) {
-        const details = outcome && outcome.error ? JSON.stringify(outcome.error) : "errore provider";
-        console.error("complete: " + details);
-        return null;
+        const providerError = outcome && outcome.error ? outcome.error : null;
+        const type = providerError && providerError.type ? providerError.type : "ProviderError";
+        const code = providerError && typeof providerError.code === "number" ? providerError.code : null;
+        const message = providerError && providerError.message ? providerError.message : "errore provider";
+        const retryAfterMs = _retryAfterMs(outcome);
+        const codeLabel = code === null ? "" : String(code) + " ";
+        console.error("complete: " + codeLabel + message);
+        const failed = { error: { type: type, code: code, message: message, retryAfterMs: retryAfterMs } };
+        return failed;
     }
     const text = toTextContent(outcome.data);
     if (typeof text !== "string" || text.length === 0) {
         console.error("complete: risposta vuota dal provider");
-        return null;
+        const emptyResponse = _failure("EmptyResponse", null, "risposta vuota dal provider");
+        return emptyResponse;
     }
     const usage = _extractUsage(outcome.response);
     const result = { text: text, usage: usage };
