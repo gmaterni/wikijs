@@ -6,7 +6,7 @@ con il motore WikiJS, mantenendo **inalterati** il resto dell'applicazione
 
 Riferimenti: `docs/architettura-knowledge-base.md` (invarianti I1–I10),
 `docs/generazione-estensione-knowledge-base.md` (build),
-`docs/workflow-query.md` (query). Codice pronto in `kb_tmp/`.
+`docs/workflow-query.md` (query). Codice in `static/js/kb/` (colla in `static/js/`).
 
 ---
 
