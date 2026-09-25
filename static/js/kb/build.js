@@ -20,7 +20,7 @@ import { chunkText } from "./chunk.js";
 import { parseJson, validateExtract, MAX_QUOTES_STORED } from "./validate.js";
 import { verifyPageQuotes } from "./quotes.js";
 import { complete as llmComplete, describeError } from "./adapter.js";
-import { DEFAULT_PARAMS, DEFAULT_ROUTING, DEFAULT_BUDGET } from "./params.js";
+import { DEFAULT_BUDGET, deriveParamsFromWindow } from "./params.js";
 
 const SOURCE_STATUSES_TODO = ["new", "changed", "error"];
 const EXTRACT_KIND = "extract";
@@ -318,7 +318,7 @@ const mergePage = function (current, incoming, sourceId, sourceText, params, now
 /**
  * Costruisce la wiki da una o più sorgenti.
  *
- * @param {object} opts - Opzioni `{ kbId, sourceIds?, mode?, budget?, onProgress?, signal?, resumeJobId?, adapter? }`.
+ * @param {object} opts - Opzioni `{ kbId, sourceIds?, mode?, budget?, onProgress?, signal?, resumeJobId?, adapter?, modelWindowTokens? }`.
  * @returns {Promise<object|null>} Report di build.
  */
 const kbBuild = async function (opts) {
@@ -358,8 +358,17 @@ const kbBuild = async function (opts) {
 const runBuildJob = async function (db, opts, mode) {
     const params = await getMeta(db, "params");
     const routing = await getMeta(db, "llmRouting");
-    const active = Object.assign({}, DEFAULT_PARAMS, params || {});
-    const routes = Object.assign({}, DEFAULT_ROUTING, routing || {});
+    const modelWindowTokens = typeof opts.modelWindowTokens === "number" ? opts.modelWindowTokens : 0;
+    const derived = deriveParamsFromWindow(modelWindowTokens, params, routing);
+    const active = derived.params;
+    const routes = derived.routing;
+    const chunking = {
+        chunkChars: active.chunkChars,
+        chunkOverlapChars: active.chunkOverlapChars,
+        maxPagesPerChunk: active.maxPagesPerChunk,
+        extractMaxTokens: routes.extract.maxTokens,
+        modelWindowTokens: modelWindowTokens
+    };
     const budget = Object.assign({}, DEFAULT_BUDGET, opts.budget || {});
     const stored = await runTx(db, ["sources", "pages"], "readonly", async function (stores) {
         const sources = await storeGetAll(stores.sources);
@@ -382,7 +391,7 @@ const runBuildJob = async function (db, opts, mode) {
         return null;
     }
     if (selected.sources.length === 0) {
-        const empty = { jobId: null, mode: mode, durationMs: 0, sources: [], totals: { sources: 0, pagesCreated: 0, pagesUpdated: 0, calls: 0, inputTokens: 0, outputTokens: 0 }, notes: ["nessuna sorgente da processare"] };
+        const empty = { jobId: null, mode: mode, status: "done", error: null, chunking: chunking, durationMs: 0, sources: [], totals: { sources: 0, pagesCreated: 0, pagesUpdated: 0, calls: 0, inputTokens: 0, outputTokens: 0 }, notes: ["nessuna sorgente da processare"] };
         return empty;
     }
     const started = Date.now();
@@ -408,6 +417,9 @@ const runBuildJob = async function (db, opts, mode) {
         if (opts.signal && opts.signal.aborted) {
             aborted = true;
             break;
+        }
+        if (opts.onProgress) {
+            opts.onProgress({ phase: "source-start", sourceId: source.sourceId, name: source.name, done: totals.sources + 1, total: selected.sources.length });
         }
         const outcome = await ingestSource(db, job, source, pageIndex, active, routes, opts);
         totals.sources = totals.sources + 1;
@@ -464,7 +476,7 @@ const runBuildJob = async function (db, opts, mode) {
         const entry = { ts: finished, type: "build", refs: { jobId: job.jobId }, summary: "build " + status, details: { totals: totals } };
         await storePut(stores.logs, entry);
     });
-    const report = { jobId: job.jobId, mode: mode, status: status, error: error, durationMs: finished - started, sources: perSource, totals: totals, notes: notes };
+    const report = { jobId: job.jobId, mode: mode, status: status, error: error, chunking: chunking, durationMs: finished - started, sources: perSource, totals: totals, notes: notes };
     return report;
 };
 

@@ -227,6 +227,11 @@ Cancellato al completamento del job (in transazione con l'aggiornamento di `jobs
 }
 ```
 
+Con `kbBuild({ modelWindowTokens })` i tre valori di chunking sono derivati
+dalla finestra del modello (8.000-40.000 caratteri, `maxPagesPerChunk` 4-10,
+`extract.maxTokens` fino a 16.000); restano questi i default senza finestra
+o con override esplicito in `meta.params`.
+
 ### 4.2 Routing LLM per funzione (`meta.llmRouting`)
 
 L'adapter è iniettato dall'app ospite (fuori ambito). WikiJS definisce solo i `purpose` e i parametri consigliati per ciascuno.

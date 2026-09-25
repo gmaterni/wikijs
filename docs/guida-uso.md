@@ -38,8 +38,8 @@ catalogo). Le chiamate ritentano 3 volte su `408,500,502,503,504`; sul `429`
 applicano un backoff crescente con spaziatura adattiva e, se persiste,
 interrompono il job (`rate_limited`) invece di moltiplicare le richieste.
 Onorano `signal` e propagano l'`usage` reale. L'esito di ogni richiesta
-LLM (provider/modello, purpose, durata, token) è riportato in `UaLog`;
-in alternativa l'adapter
+LLM (provider/modello, durata, token) è riportato in `UaLog`, insieme
+all'avvio di ogni documento; in alternativa l'adapter
 va iniettato dall'ospite (`window.WikiJsLlm.complete` oppure `setAdapter` da
 console); senza LLM restano attivi `offline` e selezione locale.
 
@@ -96,6 +96,12 @@ mostra la KB attiva e il badge LLM mostra `provider/modello` (o `LLM: ospite`).
 `maxPagesPerDoc` 40, `pageBodyMaxChars` 12000, `quotesPerPage` 5,
 `catalogTokenBudget` 8000, `queryPageBudget` 7, `queryContextChars` 20000.
 Sovrascrivibili in `kbInit({ kbId, params })`.
+
+In build i parametri di chunking sono derivati dalla finestra del modello
+(`kbBuild({ modelWindowTokens })`): chunk da 8.000 a 40.000 caratteri,
+overlap 1/8, `maxPagesPerChunk` 4-10, `extract.maxTokens` fino a 16.000.
+Un valore esplicito in `meta.params` (diverso dal default) non viene
+sovrascritto; in UaLog compare la suddivisione effettiva.
 
 ## Limiti dichiarati
 

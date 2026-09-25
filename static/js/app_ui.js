@@ -90,6 +90,9 @@ const KB_ID_FALLBACK = "kb";
 /** Ritardo prima dell'avvio delle operazioni lunghe (millisecondi). */
 const DEFERRED_START_MS = 50;
 
+/** Token per unità "k" della finestra modello (come in llm-catalog.js). */
+const MODEL_WINDOW_TOKENS_PER_K = 1024;
+
 
 // ============================================================================
 // STATO DEL MODULO
@@ -1090,7 +1093,14 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
         const kbId = await getKbId();
         await kbInit({ kbId: kbId });
         const mode = isFirstBuild ? "full" : "auto";
-        const report = await kbBuild({ kbId: kbId, mode: mode, signal: signal });
+        const llmConfig = LlmProvider.getConfig();
+        const modelWindowTokens = llmConfig && llmConfig.windowSize ? llmConfig.windowSize * MODEL_WINDOW_TOKENS_PER_K : 0;
+        const onProgress = function (progress) {
+            if (progress && progress.phase === "source-start") {
+                UaLog.log("Inizio documento: " + progress.name + " (" + String(progress.done) + "/" + String(progress.total) + ")");
+            }
+        };
+        const report = await kbBuild({ kbId: kbId, mode: mode, signal: signal, onProgress: onProgress, modelWindowTokens: modelWindowTokens });
         if (signal.aborted) {
             const cancelled = new Error("Compilazione interrotta dall'utente");
             cancelled.code = 499;
@@ -1099,6 +1109,10 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild, validDocs) {
         if (!report) {
             await alert("ERRORE: compilazione della Knowledge Base non riuscita. Controllare console e provider LLM.");
             return;
+        }
+        if (report.chunking) {
+            const windowLabel = report.chunking.modelWindowTokens > 0 ? " · finestra modello " + String(report.chunking.modelWindowTokens) + " token" : "";
+            UaLog.log("Suddivisione: " + String(report.chunking.chunkChars) + " caratteri per chunk, overlap " + String(report.chunking.chunkOverlapChars) + windowLabel);
         }
         if (report.totals && report.totals.sources === 0) {
             await alert("Nessun documento nuovo o modificato da elaborare.");

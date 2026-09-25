@@ -31,6 +31,9 @@ const RETRYABLE_CODES = [408, 500, 502, 503, 504];
 // Attese tra i tentativi, in millisecondi.
 const RETRY_DELAYS = [1000, 2000];
 
+// Purpose omesso nel log: in build è sempre lo stesso e non aggiunge informazione.
+const EXTRACT_PURPOSE = "extract";
+
 // Backoff dedicato al rate limit: base, tetto e variazione casuale (±20%).
 const RATE_LIMIT_BASE_DELAY_MS = 5000;
 const RATE_LIMIT_MAX_DELAY_MS = 60000;
@@ -337,7 +340,8 @@ const complete = async function (req) {
                 usage = _extractUsage(outcome.response);
                 _decaySpacing();
                 const tokens = String(usage.inputTokens || 0) + "/" + String(usage.outputTokens || 0);
-                _log("LLM · ok · " + purpose + " · " + label + " · " + String(elapsedMs) + " ms · token " + tokens);
+                const purposePart = purpose === EXTRACT_PURPOSE ? "" : purpose + " · ";
+                _log("LLM · ok · " + purposePart + label + " · " + String(elapsedMs) + " ms · token " + tokens);
                 break;
             }
             const providerError = outcome ? outcome.error : null;

@@ -95,7 +95,7 @@ per ogni sorgente selezionata:
 
 ### 4.1 Chunking deterministico
 
-**Parametri**: `chunkChars = 12000`, `chunkOverlapChars = 1500`.
+**Parametri**: default `chunkChars = 12000`, `chunkOverlapChars = 1500`; in build sono derivati dalla finestra del modello (`modelWindowTokens`, chunk 8.000-40.000 caratteri), salvo override per KB in `meta.params`.
 
 1. Normalizza le fini di riga in `\n` per il calcolo dei confini (il testo memorizzato resta invariato).
 2. Blocchi = paragrafi separati da riga vuota.

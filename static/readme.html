@@ -232,7 +232,7 @@
 
             <h2>Knowledge Base</h2>
             <h3>Compilazione («Crea»)</h3>
-            <p>«Crea» confronta i documenti caricati con l'elenco <code>kb_doclist</code>: la prima volta elabora tutto (<code>mode:"full"</code>), poi solo i documenti nuovi o modificati (<code>mode:"auto"</code>). Ogni sorgente è divisa in chunk deterministici (12000 caratteri, coda di 1500), ogni chunk produce una chiamata LLM validata con retry; il merge è per aggiunta e le citazioni sono verificate per sottostringa. I job sono riprendibili: interrompere la compilazione conserva lo staging e non duplica pagine.</p>
+            <p>«Crea» confronta i documenti caricati con l'elenco <code>kb_doclist</code>: la prima volta elabora tutto (<code>mode:"full"</code>), poi solo i documenti nuovi o modificati (<code>mode:"auto"</code>). Ogni sorgente è divisa in chunk deterministici (da 8000 a 40000 caratteri secondo la finestra del modello, coda 1/8), ogni chunk produce una chiamata LLM validata con retry; il merge è per aggiunta e le citazioni sono verificate per sottostringa. I job sono riprendibili: interrompere la compilazione conserva lo staging e non duplica pagine.</p>
 
             <h3>Interrogazione</h3>
             <p>Index-first dal catalogo, con modalità <code>llm</code> (≤ 2 chiamate), <code>llm-min</code> (1) e <code>offline</code> (0). La risposta usa solo le pagine caricate, cita <code>[[slug]]</code> e mostra <strong>Fonti verificate</strong> e provenienza. La conversazione è stateless: ogni «Avvia/Continua» riesegue la query con l'ultimo messaggio utente; «Visualizza Contesto» mostra l'ultima query. STOP aborta build e query (interruzioni 499 ignorate dalla UI).</p>
