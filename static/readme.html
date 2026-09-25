@@ -200,11 +200,65 @@
         </header>
 
         <div id="content">
-            <div class="loading">Caricamento README in corso...</div>
+            <h1>WikiJS</h1>
+            <p>Applicazione web <strong>client-side</strong> per costruire una knowledge base interrogabile dai propri documenti: carichi i file, la KB viene compilata in pagine wiki con citazioni verificate e la conversazione risponde solo con ciò che è presente nella wiki.</p>
+            <blockquote>Nessuna build e nessun backend applicativo: moduli ES e <code>less.js</code> girano direttamente nel browser; dati e motore vivono in IndexedDB.</blockquote>
+
+            <h2>Avvio</h2>
+            <pre><code>python3 -m http.server 8123
+# aprire http://localhost:8123/static/index.html</code></pre>
+            <p>Il server va avviato dalla root del repository (in alternativa <code>http://localhost:8123/</code>, che reindirizza all'app). Con <code>file://</code> i moduli ES e i <code>.less</code> non vengono caricati.</p>
+
+            <h2>Architettura</h2>
+            <table>
+                <thead><tr><th>Area</th><th>Moduli</th><th>Ruolo</th></tr></thead>
+                <tbody>
+                    <tr><td>Motore KB</td><td><code>js/kb/**</code></td><td>pacchetto autonomo (soli import <code>./</code>): lifecycle, build, query, sources, maintenance, adapter LLM, mock</td></tr>
+                    <tr><td>Colla host</td><td><code>js/kb_ui_state.js</code>, <code>js/docs_mgr.js</code>, <code>js/rag_engine.js</code>, <code>js/llm_provider_adapter.js</code></td><td>marcatori UI, API documenti, query per la chat, adapter sul provider configurato</td></tr>
+                    <tr><td>Interfaccia</td><td><code>js/app_ui.js</code>, <code>js/app.js</code>, <code>js/uploader.js</code></td><td>menu, finestre, upload, comandi</td></tr>
+                    <tr><td>Stack LLM</td><td><code>js/llmclient/**</code>, <code>js/llmlist/**</code>, <code>js/llm_provider.js</code></td><td>client provider, catalogo e selezione modelli</td></tr>
+                    <tr><td>Stili</td><td><code>less/**</code></td><td>interfaccia invariata rispetto all'applicazione precedente</td></tr>
+                </tbody>
+            </table>
+            <p>Il vecchio motore (lunr/compromise, Web Worker, prompt dedicati) è stato rimosso: il pacchetto <code>kb/</code> usa IndexedDB nativo e non conosce provider, chiavi o modelli.</p>
+
+            <h2>Storage</h2>
+            <ul>
+                <li><code>wikijs:&lt;kbId&gt;</code> — un database IndexedDB per knowledge base: <code>meta</code>, <code>sources</code>, <code>pages</code>, <code>catalog</code>, <code>logs</code>, <code>outputs</code>, <code>jobs</code>, <code>staging</code>.</li>
+                <li><code>wikijs_app_&lt;userId&gt;</code> — Dexie applicativo: <code>kvStore</code> (conversazione, marcatori, archivi <code>rag_kb_*</code>/<code>rag_convo_*</code>) e <code>settings</code> (<code>active_kb</code>, tema, provider, chiavi API).</li>
+                <li><code>wikijs_llm_&lt;userId&gt;</code> — Dexie dei modelli: <code>discovered-models</code> e <code>selected-models</code>.</li>
+            </ul>
+            <p>I database dell'applicazione precedente non sono migrati: al primo avvio si riparte con storage vuoto (identità ospite <code>wikijs_guest_&lt;timestamp&gt;</code>). Il Reset elimina anche i database <code>wikijs:*</code> e i residui legacy.</p>
+
+            <h2>Knowledge Base</h2>
+            <h3>Compilazione («Crea»)</h3>
+            <p>«Crea» confronta i documenti caricati con l'elenco <code>kb_doclist</code>: la prima volta elabora tutto (<code>mode:"full"</code>), poi solo i documenti nuovi o modificati (<code>mode:"auto"</code>). Ogni sorgente è divisa in chunk deterministici (12000 caratteri, coda di 1500), ogni chunk produce una chiamata LLM validata con retry; il merge è per aggiunta e le citazioni sono verificate per sottostringa. I job sono riprendibili: interrompere la compilazione conserva lo staging e non duplica pagine.</p>
+
+            <h3>Interrogazione</h3>
+            <p>Index-first dal catalogo, con modalità <code>llm</code> (≤ 2 chiamate), <code>llm-min</code> (1) e <code>offline</code> (0). La risposta usa solo le pagine caricate, cita <code>[[slug]]</code> e mostra <strong>Fonti verificate</strong> e provenienza. La conversazione è stateless: ogni «Avvia/Continua» riesegue la query con l'ultimo messaggio utente; «Visualizza Contesto» mostra l'ultima query. STOP aborta build e query (interruzioni 499 ignorate dalla UI).</p>
+
+            <h3>Gestione</h3>
+            <p>Archivia salva un bundle JSON nel record <code>rag_kb_&lt;nome&gt;</code> (il dato vero è <code>kbBundle</code>); Carica importa con <code>kbImport(mode:"replace")</code>; Cancella elimina il database della KB attiva e i marcatori; Reset elimina tutti i database <code>wikijs:*</code> e lo stato locale. Gli archivi precedenti (con indice serializzato) non sono convertibili.</p>
+
+            <h2>API da console</h2>
+            <pre><code>window.kbInit / kbAddSource / kbBuild / kbUpdate
+window.kbQuery / kbStatus / kbExport / kbImport / kbLint / kbGetId</code></pre>
+            <p>L'adapter LLM è iniettabile: <code>activateProviderAdapter()</code> usa <code>window.WikiJsLlm</code> (ospite) o il provider configurato; <code>setAdapter(createMockAdapter())</code> da <code>js/kb/index.js</code> abilita le prove deterministiche. Gli invarianti I1–I10 si verificano con <code>kbStatus().invariants</code>.</p>
+
+            <h2>LLM</h2>
+            <p>Provider e modelli si scelgono dal pulsante <strong>LLM</strong> o dal menu. Le chiamate ritentano 3 volte sui codici transitori (mai su 429), onorano <code>signal</code> e propagano l'<code>usage</code>. Senza adapter la query degrada a <code>offline</code> e la build fallisce in modo dichiarato. Gli eventi d'uso sono inviati con nome applicazione <code>wikijs</code> all'endpoint <code>https://wwwanalyzer-backend.workerua.workers.dev</code> (disattivati in locale).</p>
+
+            <h2>Documentazione</h2>
+            <ul>
+                <li><code>docs/architettura-knowledge-base.md</code> — schema, API e invarianti I1–I10</li>
+                <li><code>docs/generazione-estensione-knowledge-base.md</code> — chunking, estrazione, merge, job</li>
+                <li><code>docs/workflow-query.md</code> — selezione pagine, risposta, citazioni</li>
+                <li><code>docs/kb-wikijs-implementazione.md</code> — specifica di implementazione</li>
+                <li><code>docs/guida-uso.md</code> — guida operativa</li>
+            </ul>
         </div>
     </div>
 
-    <script src="js/services/vendor/marked.min.js"></script>
     <script>
         const themeBtn = document.getElementById('theme-btn');
         const body = document.body;
@@ -219,17 +273,6 @@
             moonIcon.style.display = newTheme === 'light' ? 'block' : 'none';
         });
 
-        (async () => {
-            const contentEl = document.getElementById('content');
-            try {
-                const res = await fetch('../README.md');
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const md = await res.text();
-                contentEl.innerHTML = marked.parse(md);
-            } catch (err) {
-                contentEl.innerHTML = '<div class="error">Errore nel caricamento del README: ' + err.message + '</div>';
-            }
-        })();
     </script>
 </body>
 </html>
