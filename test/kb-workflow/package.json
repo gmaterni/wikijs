@@ -1,0 +1,12 @@
+{
+  "name": "kb-workflow",
+  "version": "1.0.0",
+  "description": "Test di verifica del workflow di creazione KB e query (motore WikiJS, adapter mock, documenti reali da /u/AI/data)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test kb-build.test.mjs kb-query.test.mjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5"
+  }
+}
