@@ -2,9 +2,10 @@
  * kb-build.test.mjs - Verifica del workflow di creazione della KB.
  *
  * Copre gli scenari della delta spec `knowledge-base`:
- * registrazione (new/invariato/modificato/vuoto), prima costruzione,
- * incrementale, nulla-da-elaborare, delete singola, export/import con
- * filtro agli ingested, coerenza kbStatus/listSources.
+ * registrazione (new/invariato/modificato/vuoto/riattivazione), prima
+ * costruzione, incrementale, nulla-da-elaborare, delete senza toccare
+ * le pagine (tombstone, I3, revive), export/import con filtro agli
+ * ingested, coerenza kbStatus/listSources.
  *
  * Esecuzione: `npm test` (node --test).
  */
@@ -13,7 +14,7 @@ import "fake-indexeddb/auto";
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 
-import { kbInit, addSource, kbBuild, kbStatus, kbExport, kbImport } from "../../static/js/kb/api.js";
+import { kbInit, addSource, kbBuild, kbQuery, kbStatus, kbExport, kbImport } from "../../static/js/kb/api.js";
 import { listSources, isPending, deleteSource } from "../../static/js/kb/sources.js";
 import { createMockAdapter } from "../../static/js/kb/mock.js";
 import { DOC_A, DOC_B, DOC_C } from "./fixtures.mjs";
@@ -144,22 +145,60 @@ describe("prima costruzione e incrementale", () => {
   });
 });
 
-describe("cancellazione, export/import", () => {
+describe("cancellazione senza toccare le pagine", () => {
   const KB3 = `test-maint-${Date.now()}`;
 
-  test("eliminazione singolo documento: esce da doclist e pagine coerenti", async () => {
+  test("eliminazione singolo documento: testo liberato, pagine intatte e interrogabili", async () => {
     await kbInit({ kbId: KB3 });
     await addSource({ kbId: KB3, name: DOC_A.name, mime: "text/plain", text: DOC_A.text });
     await addSource({ kbId: KB3, name: DOC_B.name, mime: "text/plain", text: DOC_B.text });
     await kbBuild({ kbId: KB3, mode: "auto", adapter: mock });
+    const pagesBefore = (await kbStatus({ kbId: KB3 })).counts.pages;
+    assert.ok(pagesBefore > 0);
     const target = (await listSources(KB3)).find((r) => r.name === DOC_A.name);
     const del = await deleteSource(KB3, target.sourceId);
     assert.ok(del);
-    // Risincronizzazione come fa la UI dopo DocsMgr.delete
+    assert.deepEqual(del, { removedPages: 0, updatedPages: 0 });
+    // Le pagine restano: la KB resta interrogabile
+    const status = await kbStatus({ kbId: KB3 });
+    assert.equal(status.counts.pages, pagesBefore, "pagine rimosse dalla cancellazione");
+    // Invariante I3 verificata: record sorgente esistente (tombstone)
+    const i3 = status.invariants.find((v) => v.id === "I3");
+    assert.ok(i3 && i3.ok, "I3 non verificata dopo cancellazione");
+    // Il documento esce dagli elenchi (nomi, doclist ingested)
     const sources = await listSources(KB3);
+    const tombstone = sources.find((r) => r.sourceId === target.sourceId);
+    assert.equal(tombstone.status, "deleted");
+    assert.equal(tombstone.text, null);
     const doclist = sources.filter((r) => r.status === "ingested").map((r) => r.name);
     assert.ok(!doclist.includes(DOC_A.name), "documento rimosso ancora in doclist");
     assert.ok(doclist.includes(DOC_B.name));
+  });
+
+  test("build ignora le tombstone in ogni modo (auto e full)", async () => {
+    const autoReport = await kbBuild({ kbId: KB3, mode: "auto", adapter: mock });
+    assert.equal(autoReport.totals.sources, 0, "tombstone selezionata in auto");
+    const fullReport = await kbBuild({ kbId: KB3, mode: "full", adapter: mock });
+    const touched = (fullReport.sources || []).map((s) => s.sourceId);
+    assert.ok(!touched.includes((await listSources(KB3)).find((r) => r.status === "deleted").sourceId), "tombstone selezionata in full");
+  });
+
+  test("ricaricamento dopo cancellazione: riattiva sullo stesso sourceId", async () => {
+    const tombstone = (await listSources(KB3)).find((r) => r.status === "deleted");
+    const revived = await addSource({ kbId: KB3, name: DOC_A.name, mime: "text/plain", text: DOC_A.text });
+    assert.ok(revived);
+    assert.equal(revived.sourceId, tombstone.sourceId, "sourceId non conservato");
+    assert.ok(revived.changed, "riattivazione non marcata da elaborare");
+    assert.equal(revived.status, "changed");
+    const pending = (await listSources(KB3)).filter((r) => isPending(r));
+    assert.ok(pending.some((r) => r.name === DOC_A.name));
+  });
+
+  test("KB resta interrogabile dopo la cancellazione", async () => {
+    const res = await kbQuery({ kbId: KB3, question: "massoneria", mode: "offline", adapter: mock });
+    assert.ok(res);
+    assert.ok(res.pagesUsed.length > 0, "pagine scomparse dopo cancellazione documenti");
+    assert.equal(res.missing, false);
   });
 
   test("export/import replace: doclist filtrata ai soli ingested", async () => {

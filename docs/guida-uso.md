@@ -45,8 +45,6 @@ console); senza LLM restano attivi `offline` e selezione locale.
 
 ## Menu laterale
 
-## Documenti
-| Elenco Documenti | Visualizza ed elimina le sorgenti. |
 ## Knowledge Base
 | Crea || Estrae le pagine dalle sorgenti nuove o modificate, mai da quelle già completate. |
 | Cancella | Elimina il database della KB attiva. |
@@ -54,14 +52,14 @@ console); senza LLM restano attivi `offline` e selezione locale.
 | Gestisci | — | Elenca, attiva, esporta o elimina le KB archiviate. |
 | Ripristina |  Importa una KB da file JSON. |
 | Documenti Processati | Processati (`ingested`) e disponibili da processare (`new`/`changed`/`error`) in due gruppi. |
+| Gestione Documenti | Visualizza ed elimina le sorgenti. |
+| Riepilogo Dati  | Conteggi KB, conversazione, archivi e configurazione. |
 ## Conversazione
 | Visualizza Conversazione  | Storico della chat in formato testo. |
 | Cancella Conversazione | Cancella l'intero storico della chat e la vista; le query successive restano indipendenti. |
 | Archivia |  Salva la chat corrente (solo storico) in un archivio locale. |
 | Gestisci— | Elenca, attiva, esporta o elimina le chat archiviate. |
 | Ripristina  | Importa una chat da file JSON. |
-## Gestione Dati
-| Riepilogo Dati  | Conteggi KB, conversazione, archivi e configurazione. |
 ## LLM
 | Test LLM | Prova il prompt scritto nei modelli selezionati del provider scelto. |
 | Reset LLM  | Ripristina la selezione dai file `.txt` locali. |

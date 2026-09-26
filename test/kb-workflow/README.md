@@ -37,8 +37,9 @@ npm test
 8. aggiunta successiva: solo 1 sorgente elaborata
 9. nulla da elaborare: `totals.sources==0`
 10. modificato: solo quello rielaborato
-11. `deleteSource`: esce da doclist
-12. export/import `replace` con doclist filtrata ai soli `ingested` (task 2.2 UI)
+11. `deleteSource`: solo tombstone (testo liberato), pagine intatte e interrogabili, I3 verificata
+12. build `auto`/`full` ignora le tombstone; ricaricamento riattiva sullo stesso `sourceId`
+13. export/import `replace` con doclist filtrata ai soli `ingested` (task 2.2 UI)
 
 `kb-query.test.mjs` (workflow-query Q0):
 - offline per tema -> pagine del documento giusto (A/B/C via ancore di catalog)

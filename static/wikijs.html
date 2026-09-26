@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.ico">
+    <title>wikijs - Knowledge Base dai tuoi documenti, 100% Client-Side</title>
+    <meta name="description" content="Costruisci una knowledge base interrogabile dai tuoi documenti: carichi PDF, TXT o DOCX, la KB viene compilata in pagine wiki con citazioni verificate e l'LLM risponde solo con ciò che è nella wiki. Nessun server, nessun build.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="wikijs - Knowledge Base dai tuoi documenti, 100% Client-Side">
+    <meta property="og:description" content="Carichi i tuoi documenti, wikijs li compila in pagine wiki e risponde alle domande solo con citazioni verificate [[slug]]. 100% client-side, zero build.">
+    <meta property="og:url" content="https://gmaterni.github.io/wikijs/wikijs.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="wikijs - Knowledge Base dai tuoi documenti, 100% Client-Side">
+    <meta name="twitter:description" content="Knowledge base locale dai tuoi documenti: pagine wiki, citazioni verificate, risposte senza allucinazioni.">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --secondary-bg: #1e293b;
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --link-color: #38bdf8;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --accent-color: #0284c7;
+            --secondary-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --link-color: #0284c7;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-color);
+        }
+
+        code {
+            background: var(--secondary-bg);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .theme-toggle {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--bg-color) 100%);
+            border-radius: 1rem;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: var(--accent-color);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .tech-tag {
+            display: inline-block;
+            background: var(--secondary-bg);
+            color: var(--accent-color);
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-family: monospace;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .launch-box {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            border-top: 2px solid var(--accent-color);
+        }
+
+        .btn-launch {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white !important;
+            padding: 1rem 2.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-launch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .highlight {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1rem;
+            font-style: italic;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-launch-small {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white !important;
+            padding: 0.5rem 1.1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-launch-small:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 10px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .readme-link, .install-link {
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.4rem;
+            border: 1px solid var(--border-color);
+            background: var(--secondary-bg);
+            color: var(--text-color) !important;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .readme-link:hover, .install-link:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color) !important;
+            text-decoration: none;
+        }
+
+        .secondary-links {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .launch-links {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 1.5rem;
+        }
+
+        .launch-links .launch-link {
+            font-size: 0.95rem;
+            color: var(--link-color);
+            text-decoration: none;
+        }
+
+        .launch-links .launch-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                justify-content: center;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .secondary-links {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header>
+            <div class="header-actions">
+                <div class="secondary-links">
+                    <a href="index.html" class="btn-launch-small">🚀 Apri wikijs →</a>
+                    <a href="readme.html" class="readme-link">📖 README tecnico</a>
+                    <a href="login.html" class="install-link">🔑 Login</a>
+                </div>
+                <button class="theme-toggle" id="theme-btn" title="Cambia Tema">
+                    <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1>wikijs</h1>
+            <p style="font-size: 1.25rem; opacity: 0.9;">La wiki che risponde solo con i tuoi documenti. Nient'altro.</p>
+            <p>Knowledge Base locale. Citazioni verificate. 100% Client-Side. Zero Build.</p>
+        </section>
+
+        <div class="section">
+            <h2>Cos'è wikijs?</h2>
+            <p>
+                wikijs è un'applicazione web <strong>client-side</strong> per costruire una
+                <strong>knowledge base interrogabile</strong> dai propri documenti:
+                carichi file <strong>PDF, TXT o DOCX</strong>, la KB viene compilata in
+                <strong>pagine wiki</strong> con citazioni verificate e la conversazione
+                risponde <strong>solo con ciò che è presente nella wiki</strong>.
+            </p>
+            <div class="card highlight">
+                "Nessuna allucinazione: se l'informazione non è nella wiki, la risposta lo dichiara —
+                con Fonti verificate e riga di provenienza per ogni affermazione."
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>I Caratteri Originali del Progetto</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Frontend 100% Client-Side</h3>
+                    <p>JavaScript vanilla con <strong>ES Modules</strong> caricati nativamente dal browser. Nessun framework,
+                    nessun bundler, nessun transpiler: il codice che leggi è quello che il browser esegue.
+                    Stili <strong>LESS compilati a runtime</strong> da copia locale, senza CDN, e layout a due pannelli
+                    invariato (barra fissa, drawer laterale, output/input, overlay STOP, finestre fluttuanti, tooltip).</p>
+                    <span class="tech-tag">Vanilla JS</span> <span class="tech-tag">ES Modules</span> <span class="tech-tag">LESS</span> <span class="tech-tag">Zero Build</span>
+                </div>
+                <div class="card">
+                    <h3>Wiki Verificata, Non Chat Libera</h3>
+                    <p>Ogni risposta cita pagine con <strong>[[slug]]</strong> e mostra <strong>Fonti verificate</strong>:
+                    solo citazioni <strong>verbatim verificate per sottostringa</strong> — una parafrasi corretta ma non
+                    letterale viene scartata. Slug deterministici mai generati dall'LLM, contraddizioni in append
+                    (mai cancellazioni), pagine in quarantena escluse dalle query.</p>
+                    <span class="tech-tag">[[slug]]</span> <span class="tech-tag">Verbatim</span> <span class="tech-tag">No Allucinazioni</span>
+                </div>
+            </div>
+            <div class="grid">
+                <div class="card">
+                    <h3>Compilazione Incrementale e Riprendibile</h3>
+                    <p>Il comando <strong>Crea</strong> elabora solo sorgenti nuove o modificate (<code>mode:"auto"</code>,
+                    su KB vuota equivale a <code>full</code>) e non rielabora mai una sorgente completata, anche dopo
+                    una build interrotta. Chunk deterministici da <strong>8000 a 40000 caratteri</strong> secondo la finestra
+                    del modello (overlap 1/8), una chiamata LLM validata con retry per chunk, merge per aggiunta.
+                    I job sono riprendibili: STOP conserva lo staging senza duplicare pagine.</p>
+                    <span class="tech-tag">Incrementale</span> <span class="tech-tag">Riprendibile</span> <span class="tech-tag">Retry + Backoff</span>
+                </div>
+                <div class="card">
+                    <h3>Libertà LLM, Chiavi al Sicuro</h3>
+                    <p>Stessi 5 provider di sempre — <strong>Gemini, Mistral, Groq, OpenRouter, HuggingFace</strong> —
+                    con catalogo locale (<code>static/data/models/*.txt</code>) e scoperta remota con probe e voto.
+                    Chiavi di prova già pronte, chiavi personali solo sul dispositivo (mascherate, attivabili/eliminabili).
+                    Query index-first con modalità <strong>llm</strong> (≤2 chiamate), <strong>llm-min</strong> (1) e
+                    <strong>offline</strong> (0 chiamate, selezione locale).</p>
+                    <span class="tech-tag">5 Provider</span> <span class="tech-tag">Solo sul Dispositivo</span> <span class="tech-tag">Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Avvio in Locale</h2>
+            <p>Nessuna build, ma serve un server statico: con <code>file://</code> i moduli ES e i
+            <code>.less</code> non vengono caricati. Dalla root del repository:</p>
+            <pre><code>python3 -m http.server 8123
+# aprire http://localhost:8123/static/index.html</code></pre>
+            <p>In ambiente locale il login Google è bypassato (<code>user_local</code>) e la telemetria è disattivata.</p>
+        </div>
+
+        <div class="section">
+            <h2>Cosa Trovi nell'App</h2>
+            <ul class="feature-list">
+                <li><strong>Knowledge Base:</strong> <em>Crea</em> (solo new/changed), <em>Cancella</em>, <em>Archivia</em> (bundle JSON in <code>rag_kb_&lt;nome&gt;</code>), <em>Gestisci</em>, <em>Ripristina</em> da file, <em>Documenti Processati</em> (ingested vs new/changed/error), <em>Gestione Documenti</em>, <em>Riepilogo Dati</em>.</li>
+                <li><strong>Query indipendenti:</strong> pulsante Invia (o <code>Enter</code>) riesegue sempre <code>kbQuery({ kbId, question, mode: "llm" })</code> — ogni domanda è indipendente, senza riuso di stato. STOP aborta build e query (interruzioni 499 ignorate dalla UI).</li>
+                <li><strong>Conversazione:</strong> visualizza storico, cancella vista, archivia/gestisci/ripristina chat — <code>outputs</code> e <code>logs</code> restano append-only (invariante I6).</li>
+                <li><strong>LLM:</strong> <em>Test LLM</em> sui modelli selezionati, <em>Reset LLM</em> dai file locali, <em>Aggiorna LLM</em> (scopre, testa e vota), <em>Seleziona LLM</em> (spunta i validati). Retry ×3 su 408/500/502/503/504, backoff su 429 con stato <code>rate_limited</code>, <code>usage</code> reale su Log.</li>
+                <li><strong>API Key:</strong> <em>API Keys Default</em> (ricarica offuscate da <code>static/data/api_x.json</code>) e <em>Gestisci API Key</em> (aggiungi/attiva/elimina per provider).</li>
+                <li><strong>API da console:</strong> <code>window.kbInit / kbAddSource / kbBuild / kbUpdate / kbQuery / kbStatus / kbExport / kbImport / kbLint / kbGetId</code> — adapter iniettabile (<code>window.WikiJsLlm</code> o <code>setAdapter(createMockAdapter())</code>), invarianti I1–I10 via <code>kbStatus().invariants</code>.</li>
+                <li><strong>Temi dark/light:</strong> selezionabili e persistiti, dark di default; risposte in markdown via <code>marked</code> locale.</li>
+                <li><strong>Telemetria minima e trasparente:</strong> eventi con nome app <code>wikijs</code> verso il worker WWWANALYZER, disattivati in locale (<code>static/js/services/config.js</code>, <code>sender.js</code>).</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Gestione Memoria</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Browser Storage</h3>
+                    <p>Un database IndexedDB per KB (<code>wikijs:&lt;kbId&gt;</code>: <code>meta, sources, pages, catalog, logs, outputs, jobs, staging</code>),
+                    più Dexie applicativo <code>wikijs_app_&lt;userId&gt;</code> (<code>kvStore</code> + <code>settings</code>: <code>active_kb</code> default <code>demo</code>, tema, provider, chiavi)
+                    e Dexie modelli <code>wikijs_llm_&lt;userId&gt;</code> (<code>discovered-models</code>, <code>selected-models</code>).
+                    Riapri il browser e ritrovi tutto. <em>Reset</em> elimina anche i <code>wikijs:*</code> e i residui legacy.</p>
+                </div>
+                <div class="card">
+                    <h3>Login Solo in Produzione</h3>
+                    <p>Accesso con Google (<code>login.html</code>, identità in <code>localStorage.user_web_id</code> con isolamento DB per utente).
+                    In locale il login è bypassato (<code>DISABLE_LOGIN_ON_LOCAL</code> → <code>user_local</code>): apri e lavori subito, i dati non lasciano mai il dispositivo.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="launch-box">
+            <h2>Pronto a interrogare i tuoi documenti?</h2>
+            <p>Carica un PDF, premi Crea, fai la prima domanda.</p>
+            <div class="launch-links">
+                <a href="index.html" class="btn-launch">🚀 Apri wikijs</a>
+                <a href="readme.html" class="launch-link">📖 README tecnico</a>
+                <a href="login.html" class="launch-link">🔑 Login</a>
+            </div>
+        </div>
+
+        <footer style="margin-top: 4rem; text-align: center; font-size: 0.8rem; opacity: 0.6;">
+            wikijs è un progetto focalizzato su verificabilità, privacy e AI lato client.
+        </footer>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        const body = document.body;
+        const sunIcon = themeBtn.querySelector('.icon-sun');
+        const moonIcon = themeBtn.querySelector('.icon-moon');
+
+        const savedTheme = localStorage.getItem('wikijs-theme') || 'dark';
+        body.setAttribute('data-theme', savedTheme);
+        sunIcon.style.display = savedTheme === 'light' ? 'none' : 'block';
+        moonIcon.style.display = savedTheme === 'light' ? 'block' : 'none';
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('wikijs-theme', newTheme);
+            sunIcon.style.display = newTheme === 'light' ? 'none' : 'block';
+            moonIcon.style.display = newTheme === 'light' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

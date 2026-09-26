@@ -344,6 +344,111 @@
   overflow: hidden;
 }
 
+// ===================================================================
+//  DOCUMENTI PROCESSATI — finestra dedicata stile Seleziona LLM
+// ===================================================================
+
+.docs-select-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.docs-select-table th,
+.docs-select-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+// Corpo scrollabile per elenchi lunghi.
+.docs-scroll-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 32vh;
+
+  .docs-select-table {
+    margin: 0;
+    border-top: none;
+    border-radius: 0;
+
+    tbody tr:first-child td {
+      border-top: none;
+    }
+  }
+}
+
+.docs-select-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid;
+}
+
+// --- Barra con i soli pulsanti bassi, a destra ---
+.docs-btn-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: auto;
+  min-height: 26px;
+  padding: 1px 6px;
+  box-sizing: border-box;
+
+  .btn-success,
+  .btn-danger {
+    flex: none;
+    padding: 1px 10px;
+    font-size: 0.75em;
+    min-height: 0;
+  }
+
+  .btn-close {
+    position: static;
+    flex: none;
+  }
+}
+
+.docs-group-title {
+  margin: 4px 0 2px;
+  font-size: 0.8em;
+  color: @color-icon-close;
+  text-align: center;
+}
+
+.docs-select-table td {
+  font-size: 0.85em;
+}
+
+// --- Contenuto: se lungo, scorre tutto; i corpi scorrono prima ---
+.docs-select-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  max-height: none;
+  overflow-y: auto;
+  gap: 4px;
+}
+
+#processed-docs-window {
+  border: 1px solid #f6e602;
+  border-radius: 6px;
+}
+
+#processed-docs-window .window-info {
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+#processed-docs-window .div-info {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
 // --- Test LLM: lista provider senza background (nomi come testo cliccabile) ---
 .test-llm-providers {
   list-style: none;

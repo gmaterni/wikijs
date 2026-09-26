@@ -1,14 +1,15 @@
 /**
  * docs_mgr.js - Gestore documenti della Knowledge Base attiva.
  *
- * API documenti invariata (init/add/read/names/name/doc/delete/exists),
- * ma i documenti sono le sorgenti del motore WikiJS: `add` registra una
- * sorgente, `delete` rimuove la sorgente e (se elaborata) le pagine che
- * dipendono solo da lei, in un'unica transazione.
+ * API documenti invariata (init/add/read/names/name/doc/delete/exists):
+ * `add` registra una sorgente (riattiva una tombstone sullo stesso
+ * identificatore), `delete` rimuove solo il documento e libera il testo
+ * senza toccare le pagine, che restano interrogabili. I nomi elencati
+ * escludono le sorgenti cancellate.
  *
  * @module docs_mgr
- * @version 1.0.0
- * @date 2026-09-25
+ * @version 1.1.0
+ * @date 2026-09-26
  * @author WikiJS
  */
 
@@ -28,7 +29,9 @@ let _names = [];
 const _refreshNames = async function () {
     const kbId = await getKbId();
     const sources = await listSources(kbId);
-    _names = sources.map(function (row) {
+    _names = sources.filter(function (row) {
+        return row.status !== "deleted";
+    }).map(function (row) {
         return row.name;
     });
     return _names;
@@ -128,7 +131,7 @@ export const DocsMgr = {
     },
 
     /**
-     * Cancella un documento (sorgente) e le pagine dipendenti.
+     * Cancella un documento senza toccare le pagine della KB.
      *
      * @param {string} name - Nome del documento.
      * @returns {Promise<boolean>} Vero a cancellazione avvenuta.

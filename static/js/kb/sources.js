@@ -2,23 +2,28 @@
  * sources.js - Gestione delle sorgenti di una Knowledge Base.
  *
  * Elenca, legge e cancella le sorgenti (documenti caricati). La
- * cancellazione di una sorgente già elaborata rimuove anche le pagine
- * che dipendono solo da lei e la relativa proiezione in `catalog`,
- * in un'unica transazione: gli invarianti I2 e I3 restano verificati.
+ * cancellazione rimuove solo la sorgente (testo liberato, record
+ * conservato come tombstone `deleted`): le pagine restano intatte e
+ * interrogabili, gli invarianti I2 e I3 restano verificati e un
+ * ricaricamento dello stesso nome riattiva la sorgente sullo stesso
+ * identificatore. La build ignora le tombstone in ogni modo.
  *
  * @module kb/sources
- * @version 1.0.0
- * @date 2026-09-25
+ * @version 1.1.0
+ * @date 2026-09-26
  * @author WikiJS
  */
 
 "use strict";
 
 import { openDb } from "./db.js";
-import { runTx, requestValue, storeGetAll, storePut } from "./db.js";
+import { runTx, storeGetAll, storePut } from "./db.js";
 
 // Stati di una sorgente in attesa di elaborazione.
 const STATUSES_TODO = ["new", "changed", "error"];
+
+// Stato di una sorgente cancellata (tombstone: testo liberato, pagine intatte).
+const STATUS_DELETED = "deleted";
 
 /**
  * Elenca tutte le sorgenti di una KB.
@@ -108,15 +113,16 @@ const isPending = function (source) {
 };
 
 /**
- * Cancella una sorgente e, se elaborata, le pagine dipendenti.
+ * Cancella una sorgente senza toccare le pagine.
  *
- * Le pagine con altre sorgenti restano e perdono solo il riferimento;
- * quelle che dipendono unicamente da questa sorgente vengono rimosse
- * insieme alla loro voce di catalogo. Tutto in una transazione.
+ * Il testo è liberato e il record resta come tombstone (`deleted`):
+ * le pagine derivate restano interrogabili, I2/I3 restano verificati
+ * e ricaricare lo stesso nome riattiva la sorgente sullo stesso
+ * identificatore. Idempotente su tombstone esistenti.
  *
  * @param {string} kbId - Identificatore della KB.
  * @param {string} sourceId - Identificatore della sorgente.
- * @returns {Promise<object|null>} `{ removedPages, updatedPages }`, o null.
+ * @returns {Promise<object|null>} `{ removedPages: 0, updatedPages: 0 }`, o null.
  */
 const deleteSource = async function (kbId, sourceId) {
     if (typeof kbId !== "string" || typeof sourceId !== "string") {
@@ -129,7 +135,7 @@ const deleteSource = async function (kbId, sourceId) {
     }
     let report = null;
     try {
-        report = await runTx(db, ["sources", "pages", "catalog", "logs"], "readwrite", async function (stores) {
+        report = await runTx(db, ["sources", "logs"], "readwrite", async function (stores) {
             const sources = await storeGetAll(stores.sources);
             const source = sources.find(function (row) {
                 return row.sourceId === sourceId;
@@ -137,43 +143,23 @@ const deleteSource = async function (kbId, sourceId) {
             if (!source) {
                 return null;
             }
-            const pages = await storeGetAll(stores.pages);
-            const catalog = await storeGetAll(stores.catalog);
-            let removedPages = 0;
-            let updatedPages = 0;
             const now = Date.now();
-            for (const page of pages) {
-                const refs = page.sources || [];
-                if (!refs.includes(sourceId)) {
-                    continue;
-                }
-                if (refs.length > 1) {
-                    const updated = Object.assign({}, page, {
-                        sources: refs.filter(function (id) {
-                            return id !== sourceId;
-                        }),
-                        updatedAt: now,
-                        version: page.version + 1
-                    });
-                    await storePut(stores.pages, updated);
-                    updatedPages = updatedPages + 1;
-                    continue;
-                }
-                const projection = catalog.find(function (row) {
-                    return row.slug === page.slug;
+            if (source.status !== STATUS_DELETED) {
+                const tombstone = Object.assign({}, source, {
+                    text: null,
+                    sizeBytes: 0,
+                    status: STATUS_DELETED,
+                    error: null,
+                    ingestedAt: null,
+                    deletedAt: now
                 });
-                if (projection) {
-                    await requestValue(stores.catalog.delete(page.slug));
-                }
-                await requestValue(stores.pages.delete(page.slug));
-                removedPages = removedPages + 1;
+                await storePut(stores.sources, tombstone);
             }
-            await requestValue(stores.sources.delete(sourceId));
-            const summary = "sorgente cancellata";
-            const details = { removedPages: removedPages, updatedPages: updatedPages };
+            const summary = "sorgente cancellata (pagine conservate)";
+            const details = { removedPages: 0, updatedPages: 0 };
             const entry = { ts: now, type: "source", refs: { sourceId: sourceId }, summary: summary, details: details };
             await storePut(stores.logs, entry);
-            const result = { removedPages: removedPages, updatedPages: updatedPages };
+            const result = { removedPages: 0, updatedPages: 0 };
             return result;
         });
     } catch (error) {
@@ -189,5 +175,6 @@ export {
     listSources,
     readSource,
     isPending,
-    deleteSource
+    deleteSource,
+    STATUS_DELETED
 };

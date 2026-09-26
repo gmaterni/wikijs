@@ -23,6 +23,7 @@ import { complete as llmComplete, describeError } from "./adapter.js";
 import { DEFAULT_BUDGET, deriveParamsFromWindow } from "./params.js";
 
 const SOURCE_STATUSES_TODO = ["new", "changed", "error"];
+const SOURCE_STATUS_DELETED = "deleted";
 const EXTRACT_KIND = "extract";
 
 /**
@@ -64,7 +65,8 @@ const addSource = async function (opts) {
                 }
                 const now = Date.now();
                 const sameName = all.find(function (row) { return row.name === opts.name; });
-                if (sameName && sameName.sha256 === hash) {
+                const isRevive = sameName && sameName.status === SOURCE_STATUS_DELETED;
+                if (sameName && !isRevive && sameName.sha256 === hash) {
                     const unchanged = Object.assign({}, sameName, { changed: false });
                     return unchanged;
                 }
@@ -99,16 +101,21 @@ const addSource = async function (opts) {
 /**
  * Seleziona le sorgenti da processare in base al modo.
  *
+ * Le tombstone (`deleted`) non sono mai selezionate in nessun modo.
+ *
  * @param {Array} all - Tutte le sorgenti della KB.
  * @param {string} mode - `auto`, `full` o `update`.
  * @returns {object} `{ sources, error }`.
  */
 const selectSources = function (all, mode) {
+    const live = all.filter(function (row) {
+        return row.status !== SOURCE_STATUS_DELETED;
+    });
     if (mode === "full") {
-        const allSources = { sources: all.slice(), error: null };
+        const allSources = { sources: live.slice(), error: null };
         return allSources;
     }
-    const pending = all.filter(function (row) {
+    const pending = live.filter(function (row) {
         return SOURCE_STATUSES_TODO.includes(row.status);
     });
     if (mode === "update" && pending.length === 0) {

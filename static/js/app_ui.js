@@ -36,6 +36,7 @@ import { llmDb } from "./llm/llm-db.js";
 import { runUpdate as runLlmUpdate } from "./commands/update-llm.js";
 import { runReset as runLlmReset } from "./commands/reset-llm.js";
 import { runTestLlm as runLlmTest } from "./commands/test-llm.js";
+import { createProcessedDocsWindow } from "./commands/processed-docs.js";
 import { LlmUpdater } from "./llm_updater.js";
 
 // ============================================================================
@@ -865,37 +866,9 @@ const _actionLogout = function() { WebId.clear(); window.location.replace("login
 const _actionShowProcessedDocs = async function() {
     const kbId = await getKbId();
     const sources = await listSources(kbId) || [];
-    const jfh = UaJtfh();
-    jfh.append('<div><h4>Documenti Processati nella KB</h4>');
-    if (sources.length === 0) {
-        jfh.append('<p>Nessuna Knowledge Base ancora costruita.</p>');
-    } else {
-        const processed = sources.filter(function(row) { return !isPending(row); });
-        const available = sources.filter(function(row) { return isPending(row); });
-        jfh.append('<h5>Processati (' + processed.length + ')</h5>');
-        if (processed.length === 0) {
-            jfh.append('<p>Nessun documento processato.</p>');
-        } else {
-            jfh.append('<table class="table-data"><tbody>');
-            processed.forEach(function(row) {
-                jfh.append('<tr><td>' + row.name + '</td><td><span class="status-presente">processato</span></td></tr>');
-            });
-            jfh.append('</tbody></table>');
-        }
-        jfh.append('<h5>Disponibili da processare (' + available.length + ')</h5>');
-        if (available.length === 0) {
-            jfh.append('<p>Nessun documento in attesa.</p>');
-        } else {
-            jfh.append('<table class="table-data"><tbody>');
-            available.forEach(function(row) {
-                const state = row.status || "in attesa";
-                jfh.append('<tr><td>' + row.name + '</td><td><span class="status-assente">' + state + '</span></td></tr>');
-            });
-            jfh.append('</tbody></table>');
-        }
-    }
-    jfh.append('</div>');
-    wnds.winfo.show(jfh.html());
+    const processed = sources.filter(function(row) { return row.status === "ingested"; });
+    const available = sources.filter(function(row) { return isPending(row); });
+    createProcessedDocsWindow({ processed: processed, available: available }).show();
 };
 
 
@@ -1052,30 +1025,31 @@ const _collectValidDocumentsAsync = async function() {
 const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
     const kbId = await getKbId();
     const sources = await listSources(kbId) || [];
-    const ingested = sources.filter(function(row) { return !isPending(row); });
+    const ingested = sources.filter(function(row) { return row.status === "ingested"; });
     const pending = sources.filter(function(row) { return isPending(row); });
-    const processedNames = ingested.map(function(row) { return row.name; });
     const sourceNames = new Set(sources.map(function(row) { return row.name; }));
     const unregistered = validDocs.map(function(doc) { return doc.name; }).filter(function(name) { return !sourceNames.has(name); });
     const availableNames = pending.map(function(row) { return row.name; }).concat(unregistered);
     const isFirstBuild = ingested.length === 0 && existingDoclist.length === 0;
-    const _formatList = function(names) {
-        const listed = names.length > 0 ? names.join(", ") : "-";
-        return listed;
-    };
+    // La conferma è dentro la finestra dedicata (niente dialogo nativo
+    // sopra): l'utente vede i due gruppi e sceglie Procedi/Annulla lì.
+    const availableRows = pending.concat(unregistered.map(function(name) {
+        return { name: name, status: "nuovo" };
+    }));
+    const docsWnd = createProcessedDocsWindow({ processed: ingested, available: availableRows });
     if (isFirstBuild) {
-        const question = `Creare KB? ${processedNames.length} già processati (${_formatList(processedNames)}), ${availableNames.length} da processare (${_formatList(availableNames)}). Procedere?`;
-        const confirmed = await confirm(question);
-        return confirmed;
+        const proceed = await docsWnd.confirmAsync();
+        return proceed;
     }
     if (availableNames.length === 0) {
-        await alert("Tutti i documenti caricati sono già stati elaborati nella KB esistente. Nessun documento nuovo o modificato da elaborare.");
+        docsWnd.show();
+        await alert("Nessun documento nuovo o modificato da elaborare.");
+        docsWnd.close();
         const blocked = false;
         return blocked;
     }
-    const question = `Aggiornare KB? ${processedNames.length} già processati (${_formatList(processedNames)}), ${availableNames.length} da processare (${_formatList(availableNames)}). Procedere?`;
-    const confirmed = await confirm(question);
-    return confirmed;
+    const proceed = await docsWnd.confirmAsync();
+    return proceed;
 };
 
 /**
@@ -1158,6 +1132,11 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild) {
         const pages = await _syncKnowledgeMarkersAsync(kbId);
         const totalsLine = "Compilazione completata: " + String(report.totals.sources) + " sorgenti, " + String(report.totals.pagesCreated) + " pagine create, " + String(report.totals.pagesUpdated) + " aggiornate, " + String(report.totals.calls) + " chiamate LLM.";
         UaLog.log(totalsLine);
+        if (!pages) {
+            UaLog.log(`KB "${kbId}" senza pagine dopo la build: controllare provider LLM e Log.`);
+            await alert(`Knowledge Base senza pagine (0 create). Controllare il provider LLM e il Log, poi riprovare con «Crea».`);
+            return;
+        }
         let message = "";
         if (isFirstBuild) {
             message = `Knowledge Base creata: ${pages} pagine.`;
@@ -1204,7 +1183,7 @@ export const TextInput = {
         const existingDoclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
         const kbIdForFirst = await getKbId();
         const sourcesForFirst = await listSources(kbIdForFirst) || [];
-        const ingestedForFirst = sourcesForFirst.filter(function(row) { return !isPending(row); });
+        const ingestedForFirst = sourcesForFirst.filter(function(row) { return row.status === "ingested"; });
         const isFirstBuild = ingestedForFirst.length === 0 && existingDoclist.length === 0;
         const proceed = await _confirmKnowledgeBuildAsync(validDocs, existingDoclist);
         if (!proceed) return;
@@ -1231,8 +1210,18 @@ export const TextInput = {
 
         const kbId = await getKbId();
         const status = await kbStatus({ kbId: kbId });
-        const pagesCount = status && status.counts ? status.counts.pages : 0;
-        if (pagesCount === 0) { await alert("Compilare prima la Knowledge Base"); return; }
+        if (!status || !status.counts) {
+            UaLog.log(`Query bloccata: stato KB "${kbId}" illeggibile.`);
+            await alert(`Impossibile leggere lo stato della KB "${kbId}". Ricaricare la pagina e riprovare.`);
+            return;
+        }
+        const pagesCount = status.counts.pages || 0;
+        if (pagesCount === 0) {
+            const sourcesCount = status.counts.sources || 0;
+            UaLog.log(`Query bloccata: KB "${kbId}" senza pagine (sorgenti: ${sourcesCount}).`);
+            await alert(`La KB "${kbId}" non ha pagine (sorgenti: ${sourcesCount}). Compilare prima la Knowledge Base.`);
+            return;
+        }
 
         _Spinner.show();
         await UaSender.sendEventAsync("wikijs", "startConversation");
@@ -1855,7 +1844,7 @@ export const bindEventListener = function() {
         menuElencoDocs.onclick = async function() {
             const arr = await DocsMgr.names();
             const jfh = UaJtfh();
-            jfh.append('<div class="data-dialog"><h4>Elenco Documenti</h4>');
+            jfh.append('<div class="data-dialog"><h4>Gestione Documenti</h4>');
             if (arr.length > 0) {
                 jfh.append('<div class="docs-header">');
                 jfh.append('<label><input type="checkbox" onclick="document.querySelectorAll(\'.doc-checkbox\').forEach(cb => cb.checked = this.checked)"> Seleziona Tutto</label>');
@@ -1927,15 +1916,16 @@ export const bindEventListener = function() {
             const liveStatus = await kbStatus({ kbId: kbIdLive });
             const liveSources = await listSources(kbIdLive) || [];
             const liveCounts = liveStatus ? liveStatus.counts : { sources: 0, pages: 0 };
-            const liveIngested = liveSources.filter(function(row) { return !isPending(row); });
+            const liveIngested = liveSources.filter(function(row) { return row.status === "ingested"; });
             const livePending = liveSources.filter(function(row) { return isPending(row); });
+            const livePresent = liveSources.filter(function(row) { return row.status !== "deleted"; });
             const activeChunks = _kv(DATA_KEYS.PHASE0_CHUNKS);
             if (activeChunks || liveSources.length > 0 || (liveCounts.pages || 0) > 0) {
                 jfh.append('<h4>Knowledge Base Attiva</h4><table class="table-data"><tbody>');
                 const liveDocNames = liveIngested.map(function(row) { return row.name; });
                 _row(DATA_KEYS.KB_DOCLIST, `Documenti processati: ${liveIngested.length}, disponibili: ${livePending.length}`, liveDocNames);
                 const pagesLive = liveCounts.pages || 0;
-                const sourcesLive = liveCounts.sources || 0;
+                const sourcesLive = livePresent.length;
                 _row(DATA_KEYS.PHASE0_CHUNKS, `Pagine: ${pagesLive}, Sorgenti: ${sourcesLive}`, liveStatus ? liveStatus : null);
                 _row(DATA_KEYS.PHASE1_INDEX, 'Indice di ricerca', _kv(DATA_KEYS.PHASE1_INDEX)?.value);
                 const childMap = _kv(DATA_KEYS.KB_CHILDCHUNKS);
