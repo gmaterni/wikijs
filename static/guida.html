@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.ico">
+    <title>wikijs - Guida Utente</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --secondary-bg: #1e293b;
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --link-color: #38bdf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --accent-color: #0284c7;
+            --secondary-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --link-color: #0284c7;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-color);
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        h2 {
+            margin-top: 2rem;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            margin-top: 1.5rem;
+        }
+
+        code {
+            background: var(--secondary-bg);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        pre {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .theme-toggle {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .highlight {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1rem;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .step {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .toc {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0 1.5rem 0;
+        }
+        .toc h3 { margin: 0 0 0.5rem 0; }
+        .toc ol { margin: 0; }
+        .toc a { color: var(--link-color); }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            vertical-align: middle;
+            margin-left: 0.4rem;
+        }
+        .badge-new {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-color);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+        .badge-info {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success-color);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+        }
+        table.help-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            min-width: 560px;
+        }
+        .help-table th,
+        .help-table td {
+            text-align: left;
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+        .help-table th {
+            background: var(--secondary-bg);
+            color: var(--accent-color);
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .help-table tr:last-child td { border-bottom: none; }
+        .help-table td:first-child { white-space: nowrap; font-weight: 600; }
+
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin: 1rem 0;
+            align-items: stretch;
+        }
+        .flow-step {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.6rem;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .flow-step strong { display: block; color: var(--accent-color); margin-bottom: 0.25rem; }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+            font-weight: 800;
+        }
+        @media (max-width: 768px) {
+            .flow { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 0.15rem 0; }
+        }
+
+        .kbd {
+            display: inline-block;
+            padding: 0.1rem 0.35rem;
+            border: 1px solid var(--border-color);
+            border-bottom-width: 2px;
+            border-radius: 0.3rem;
+            background: var(--secondary-bg);
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .warning::before {
+            content: "⚠️";
+            margin-right: 0.5rem;
+        }
+
+        .tip {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .tip::before {
+            content: "💡";
+            margin-right: 0.5rem;
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .back-to-app {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 2rem;
+        }
+
+        .back-to-app:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+
+        footer {
+            margin-top: 4rem;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header>
+            <h1>wikijs - Guida Utente</h1>
+            <button class="theme-toggle" id="theme-btn" title="Cambia Tema">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
+        </header>
+
+        <section class="section">
+            <h2>Introduzione</h2>
+            <p>
+                <strong>wikijs</strong> costruisce una <strong>knowledge base interrogabile</strong> dai tuoi documenti:
+                carichi i file, la KB viene compilata in <strong>pagine wiki</strong> e ogni domanda riceve
+                una risposta basata <strong>solo su ciò che è nella wiki</strong>, con citazioni
+                <code>[[slug]]</code> e <strong>Fonti verificate</strong>. Tutto è <strong>100% client-side</strong>:
+                nessun server, nessun account, nessun build.
+            </p>
+            <div class="highlight">
+                "Nessuna allucinazione: se l'informazione non è nella wiki, la risposta lo dichiara —
+                con la riga di provenienza per ogni affermazione."
+            </div>
+            <nav class="toc" aria-label="Indice guida">
+                <h3>Indice — cosa trovi in questa guida</h3>
+                <ol>
+                    <li><a href="#primi-passi">Primi passi (3 step)</a></li>
+                    <li><a href="#comandi-kb">Comandi Knowledge Base</a></li>
+                    <li><a href="#domande">Fare domande e leggere le risposte</a></li>
+                    <li><a href="#conversazione">Conversazione</a></li>
+                    <li><a href="#comandi-llm">Comandi LLM — panoramica rapida</a></li>
+                    <li><a href="#test-llm">Test LLM — guida passo-passo</a></li>
+                    <li><a href="#api-key">Gestione API Key</a></li>
+                    <li><a href="#interfaccia">Interfaccia e pulsanti</a></li>
+                    <li><a href="#documenti">Documenti e sorgenti</a></li>
+                    <li><a href="#temi">Temi, reset e logout</a></li>
+                </ol>
+            </nav>
+        </section>
+
+        <section class="section" id="primi-passi">
+            <h2>Primi Passi — in 3 step</h2>
+            <p>Dal caricamento alla prima risposta verificata. Bastano pochi minuti (+ il tempo di compilazione).</p>
+
+            <div class="flow" aria-label="Flusso primi passi">
+                <div class="flow-step"><strong>1. LLM</strong>Provider + chiave + modello</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>2. Compila</strong>Upload + Crea KB</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>3. Domanda</strong>Invia e leggi le fonti</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>4. Itera</strong>Nuovi doc → Crea</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>5. Archivia</strong>KB e chat salvate</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Configura l'LLM</strong>
+                <p>
+                    Premi il pulsante <strong>LLM</strong> nella barra superiore e scegli un provider
+                    (Gemini, Mistral, Groq, OpenRouter, HuggingFace), poi un modello.
+                    Al primo avvio trovi <strong>chiavi di prova già pronte</strong>: puoi partire subito,
+                    per l'uso quotidiano aggiungi la tua chiave in
+                    <strong>Menu → API Key → Gestisci API Key</strong> (resta solo sul tuo dispositivo).
+                </p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Carica i documenti e crea la KB</strong>
+                <p>
+                    Premi <strong>Upload</strong> e seleziona file <code>.txt</code>, <code>.pdf</code>,
+                    <code>.docx</code> o <code>.odt</code>. Poi vai su
+                    <span class="kbd">☰ Menu</span> → <strong>Knowledge Base → Crea</strong>:
+                    elabora solo le sorgenti nuove o modificate, mostra l'avanzamento nel Log
+                    e puoi interrompere con <strong>STOP</strong> (il lavoro fatto è conservato, alla prossima
+                    <em>Crea</em> riprende da dove si era fermata).
+                </p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Fai la prima domanda</strong>
+                <p>
+                    Scrivi la domanda nella casella in basso e premi <strong>Invia</strong> (o <span class="kbd">Enter</span>).
+                    La risposta arriva con citazioni <code>[[slug]]</code>, sezione <strong>Fonti verificate</strong>
+                    e riga di provenienza. Se la risposta non è nella wiki, l'app lo dichiara invece di inventare.
+                </p>
+            </div>
+        </section>
+
+        <section class="section" id="comandi-kb">
+            <h2>Comandi Knowledge Base</h2>
+            <p>Tutti nel <span class="kbd">☰ Menu</span> → sezione <strong>Knowledge Base</strong>. La KB attiva (default <code>demo</code>) è mostrata nel badge in alto.</p>
+
+            <div class="table-wrap">
+                <table class="help-table" aria-label="Comandi Knowledge Base">
+                    <thead>
+                        <tr>
+                            <th>Comando</th>
+                            <th>Quando usarlo</th>
+                            <th>Cosa fa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Crea</td>
+                            <td>Dopo aver caricato documenti nuovi o modificati</td>
+                            <td>Compila solo le sorgenti nuove/modificate (mai quelle già completate); chunking, extract LLM, merge, citazioni verificate</td>
+                        </tr>
+                        <tr>
+                            <td>Documenti Processati</td>
+                            <td>Vuoi vedere lo stato di avanzamento</td>
+                            <td>Mostra processati (<code>ingested</code>) e disponibili da processare (<code>new</code>/<code>changed</code>/<code>error</code>) in due gruppi</td>
+                        </tr>
+                        <tr>
+                            <td>Gestione Documenti</td>
+                            <td>Vuoi vedere o eliminare le sorgenti caricate</td>
+                            <td>Elenco file con anteprima ed eliminazione</td>
+                        </tr>
+                        <tr>
+                            <td>Archivia</td>
+                            <td>Vuoi conservare la KB con un nome</td>
+                            <td>Salva un bundle JSON negli archivi locali (<code>rag_kb_&lt;nome&gt;</code>)</td>
+                        </tr>
+                        <tr>
+                            <td>Gestisci</td>
+                            <td>Vuoi passare da una KB all'altra</td>
+                            <td>Elenca, attiva, esporta o elimina le KB archiviate</td>
+                        </tr>
+                        <tr>
+                            <td>Ripristina</td>
+                            <td>Hai un file di backup della KB</td>
+                            <td>Importa la KB da file JSON (sostituisce l'attiva)</td>
+                        </tr>
+                        <tr>
+                            <td>Cancella</td>
+                            <td>Vuoi buttare la KB attiva e ricominciare</td>
+                            <td>Elimina il database della KB attiva e i marcatori</td>
+                        </tr>
+                        <tr>
+                            <td>Riepilogo Dati</td>
+                            <td>Vuoi i conteggi complessivi</td>
+                            <td>KB, conversazione, archivi e configurazione raggruppati per tipo</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tip">Le compilazioni costano chiamate LLM (una per chunk): per il primo collaudo usa un modello economico e un documento piccolo.</div>
+        </section>
+
+        <section class="section" id="domande">
+            <h2>Fare Domande e Leggere le Risposte</h2>
+
+            <div class="card">
+                <h3>Inviare una domanda</h3>
+                <p>
+                    Scrivi nella casella in basso e premi il pulsante <strong>Invia (verde)</strong> o
+                    <span class="kbd">Enter</span> (<span class="kbd">Shift</span>+<span class="kbd">Enter</span> va a capo).
+                    <strong>Ogni domanda è indipendente</strong>: non c'è memoria tra domande, la query riparte sempre dalla KB.
+                    Con <strong>STOP</strong> interrompi una query in corso.
+                </p>
+                <div class="tip">La query usa prima l'indice del catalogo e chiama l'LLM solo se serve (modalità <code>llm</code> ≤ 2 chiamate, <code>llm-min</code> 1, <code>offline</code> 0).</div>
+            </div>
+
+            <div class="card">
+                <h3>Leggere la risposta</h3>
+                <ul>
+                    <li><strong>Citazioni <code>[[slug]]</code></strong> — ogni affermazione rimanda alla pagina wiki di origine.</li>
+                    <li><strong>Fonti verificate</strong> — solo citazioni <em>verbatim</em> (testo letterale trovato nella sorgente): una parafrasi corretta ma non letterale viene scartata.</li>
+                    <li><strong>Riga di provenienza</strong> — indica da quale documento/chunk deriva il contenuto.</li>
+                    <li><strong>Nessuna allucinazione</strong> — se la wiki non contiene la risposta, l'app lo dichiara esplicitamente.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" id="conversazione">
+            <h2>Conversazione</h2>
+            <p>Comandi nel <span class="kbd">☰ Menu</span> → sezione <strong>Conversazione</strong>. Lo storico resta visibile nell'output, ma le query restano indipendenti tra loro.</p>
+
+            <div class="table-wrap">
+                <table class="help-table" aria-label="Comandi Conversazione">
+                    <thead>
+                        <tr>
+                            <th>Comando</th>
+                            <th>Cosa fa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Visualizza</td><td>Mostra lo storico della chat in formato testo</td></tr>
+                        <tr><td>Cancella</td><td>Elimina lo storico e pulisce la vista (le query successive restano indipendenti)</td></tr>
+                        <tr><td>Archivia</td><td>Salva la chat corrente (solo storico) con un nome</td></tr>
+                        <tr><td>Gestisci</td><td>Elenca, attiva, esporta o elimina le chat archiviate</td></tr>
+                        <tr><td>Ripristina</td><td>Importa una chat da file JSON</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section" id="comandi-llm">
+            <h2>Comandi LLM — panoramica rapida</h2>
+            <p>Tutti nel <span class="kbd">☰ Menu</span> → sezione <strong>LLM</strong>. Ecco quando usare ciascuno:</p>
+
+            <div class="table-wrap">
+                <table class="help-table" aria-label="Confronto comandi LLM">
+                    <thead>
+                        <tr>
+                            <th>Comando</th>
+                            <th>Quando usarlo</th>
+                            <th>Cosa fa</th>
+                            <th>Dove vedi il risultato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Test LLM <span class="badge badge-new">Nuovo</span></td>
+                            <td>Vuoi confrontare i <em>modelli già selezionati</em> con lo stesso prompt</td>
+                            <td>Testa in sequenza tutti i modelli di un provider (stesso prompt)</td>
+                            <td>Spinner + <strong>Log</strong> + finestra riepilogo 84vw</td>
+                        </tr>
+                        <tr>
+                            <td>Seleziona LLM</td>
+                            <td>Vuoi scegliere quali modelli compaiono nell'albero</td>
+                            <td>Apre elenco con checkbox per provider/modello</td>
+                            <td>Albero LLM aggiornato</td>
+                        </tr>
+                        <tr>
+                            <td>Aggiorna LLM</td>
+                            <td>Vuoi scoprire nuovi modelli dai provider con chiave attiva</td>
+                            <td>Scarica + testa modelli, calcola voto</td>
+                            <td>Log + elenco per selezione</td>
+                        </tr>
+                        <tr>
+                            <td>Reset LLM</td>
+                            <td>Selezione rotta o vuoi tornare ai default</td>
+                            <td>Svuota selezione e ripristina modelli da <code>data/models/</code></td>
+                            <td>Albero LLM ricostruito</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Selezionare un Provider / Modello</h3>
+                <p>
+                    Pulsante <strong>LLM</strong> in alto → albero provider/modelli. Clicca un provider per espandere i modelli, poi un modello per attivarlo.
+                    Il modello attivo resta visibile nel badge accanto (<code>provider/modello</code>, o <code>LLM: ospite</code>).
+                </p>
+                <div class="tip">Puoi cambiare modello in qualsiasi momento (hot-swap) senza ricaricare la pagina. La finestra del modello influenza il chunking in build (chunk 8.000–40.000 caratteri).</div>
+            </div>
+
+            <div class="card">
+                <h3>Finestra Seleziona LLM</h3>
+                <p>La finestra mostra solo i modelli con voto ≥6 e 4 pulsanti:</p>
+                <ul>
+                    <li><strong>Salva</strong> — sostituisce completamente la selezione con i modelli spuntati</li>
+                    <li><strong>Aggiungi</strong> — unisce i modelli spuntati a quelli già presenti</li>
+                    <li><strong>Annulla</strong> — deseleziona tutti i modelli</li>
+                    <li><strong>Seleziona Attivi</strong> — seleziona solo gli LLM già attivi nell'albero, deseleziona gli altri — inverso di Annulla</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" id="test-llm">
+            <h2>Test LLM — guida passo-passo <span class="badge badge-new">Nuovo</span></h2>
+            <p><strong>Obiettivo:</strong> confrontare, con <em>un solo prompt</em>, tutti i modelli che hai già selezionato per un provider. Utile per scegliere il più veloce o più adatto (anche per le compilazioni KB).</p>
+
+            <div class="flow" aria-label="Flusso Test LLM">
+                <div class="flow-step"><strong>1. Prompt</strong>Scrivi il prompt nell'input</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>2. Avvia</strong><span class="kbd">☰</span> → <strong>LLM → Test LLM</strong></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>3. Provider</strong>Scegli il provider nella finestra</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>4. Attendi</strong>Spinner STOP + Log live</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step"><strong>5. Riepilogo</strong>Tabella Modello / Response / Tempo</div>
+            </div>
+
+            <div class="card">
+                <h3>Passo 1 — Prepara il prompt</h3>
+                <p>Scrivi il prompt nella <strong>casella di input</strong> in basso. È <strong>obbligatorio</strong>: se manca, l'app mostra <em>"digita prima un prompt di richiesta"</em> e non parte.</p>
+            </div>
+
+            <div class="card">
+                <h3>Passo 2 — Apri Test LLM</h3>
+                <p><span class="kbd">☰ Menu</span> → <strong>LLM → Test LLM</strong> (prima voce della sezione LLM).</p>
+                <p>Si apre la finestra <code>Test LLM</code> con il tuo prompt e la lista dei <strong>provider che hanno modelli selezionati</strong>, ciascuno con conteggio.</p>
+                <div class="warning">Se non hai modelli selezionati, l'app avvisa: "nessun modello selezionato — esegui Reset LLM o Seleziona LLM".</div>
+            </div>
+
+            <div class="card">
+                <h3>Passo 3 — Scegli il provider</h3>
+                <p>Clicca il provider da testare. La finestra si chiude e parte il ciclo <strong>sequenziale</strong> (un modello alla volta, parametri uguali per tutte le prove).</p>
+            </div>
+
+            <div class="card">
+                <h3>Passo 4 — Durante il test</h3>
+                <ul>
+                    <li><strong>Spinner con STOP:</strong> clicca <strong>STOP</strong> e conferma per interrompere. La richiesta in corso viene annullata.</li>
+                    <li><strong>Log live:</strong> il pannello <strong>Log</strong> si apre da solo e registra ogni prova con provider/modello, dimensioni e tempo, oppure il codice errore.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Passo 5 — Finestra riepilogativa</h3>
+                <p>Alla fine (anche dopo STOP) si apre la finestra <strong>Riepilogo [provider]</strong>, larga <strong>84vw</strong>, con tabella Modello / Response / Tempo o codice errore. Chiudi con <strong>X</strong>: provider/modello attivi vengono ripristinati.</p>
+                <div class="warning">Errori comuni: <code>NO_KEY</code> (manca API key), <code>NO_MODEL</code> (modello non in catalogo), <code>429</code> (rate limit), <code>5xx</code> (provider sovraccarico).</div>
+            </div>
+        </section>
+
+        <section class="section" id="api-key">
+            <h2>Gestione delle API Key</h2>
+
+            <div class="card">
+                <h3>Ottenere una API Key da un Provider</h3>
+                <p>
+                    La API Key è una stringa segreta che identifica il tuo account presso il provider
+                    e abilita le chiamate ai suoi modelli. Si ottiene dalla console web del provider:
+                    crea un account, vai alla sezione API Keys e genera una nuova chiave.
+                    <strong>Copiala subito</strong>: molti provider la mostrano una sola volta.
+                </p>
+                <ul>
+                    <li>
+                        <strong>Google Gemini</strong> — Vai su
+                        <a href="https://aistudio.google.com" target="_blank" rel="noopener">Google AI Studio</a>,
+                        accedi con l'account Google e premi <span class="kbd">Get API Key</span> →
+                        <span class="kbd">Create API key</span>. Il piano gratuito copre l'uso normale.
+                    </li>
+                    <li>
+                        <strong>Mistral AI</strong> — Vai su
+                        <a href="https://console.mistral.ai" target="_blank" rel="noopener">console.mistral.ai</a>,
+                        apri <span class="kbd">API Keys</span> e crea una chiave. Potrebbe servirti un metodo
+                        di pagamento o credito prepagato anche per i modelli minori.
+                    </li>
+                    <li>
+                        <strong>Groq</strong> — Vai su
+                        <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a>,
+                        apri <span class="kbd">API Keys</span> e premi <span class="kbd">Create API Key</span>.
+                        Il piano gratuito ha limiti di richieste al minuto.
+                    </li>
+                    <li>
+                        <strong>OpenRouter</strong> — Vai su
+                        <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a>,
+                        apri <span class="kbd">Keys</span> e crea una chiave. La maggior parte dei modelli
+                        richiede crediti prepagati; alcuni modelli <em>free</em> funzionano a costo zero.
+                    </li>
+                    <li>
+                        <strong>Hugging Face</strong> — Vai su
+                        <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Settings → Access Tokens</a>
+                        e crea un token di tipo <span class="kbd">Read</span>. Serve per
+                        l'inferenza serverless sui modelli ospitati.
+                    </li>
+                </ul>
+                <div class="tip">
+                    Se una chiave smette di funzionare, rigenerala dalla stessa console e sostituiscila
+                    nell'app: le chiavi possono scadere o essere revocate dal provider.
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Aggiungere una Chiave API</h3>
+                <p>
+                    Dal menu laterale, vai su <strong>API Key &gt; Gestisci API Key</strong> e compila il modulo in alto:
+                </p>
+                <ul>
+                    <li><strong>Provider</strong>: scegli il provider della chiave dal menu a tendina</li>
+                    <li><strong>Nome</strong>: un'etichetta a piacere (es. <code>personale</code>) per distinguerla</li>
+                    <li><strong>API Key</strong>: incolla la chiave copiata dalla console del provider</li>
+                </ul>
+                <p>
+                    Premi <span class="kbd">Aggiungi</span>: la chiave compare nell'elenco sotto il suo provider,
+                    in forma mascherata. Puoi salvare più chiavi per lo stesso provider.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Attivare e Usare una Chiave</h3>
+                <p>
+                    Ogni provider usa <strong>una sola chiave attiva alla volta</strong>: seleziona
+                    <span class="kbd">Attiva</span> sulla riga da usare (viene evidenziata). Poi scegli
+                    provider e modello dal pulsante <strong>LLM</strong>, oppure usa
+                    <strong>LLM &gt; Aggiorna LLM</strong> per scoprire i modelli con chiave attiva.
+                </p>
+                <div class="warning">
+                    Senza chiave attiva il provider non risponde: vedrai <code>NO_KEY</code>
+                    o <code>401</code> (chiave non valida o scaduta).
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Ripristinare le Chiavi Default</h3>
+                <p>
+                    <strong>API Key &gt; API Keys Default</strong> ricarica le chiavi di prova predefinite
+                    (offuscate in <code>static/data/api_x.json</code>, seminate al primo avvio).
+                </p>
+                <div class="warning">
+                    Le chiavi di prova hanno limiti di utilizzo. Per un uso regolare, aggiungi le tue chiavi personali.
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Sicurezza delle Chiavi</h3>
+                <ul>
+                    <li>Le chiavi vengono memorizzate solo localmente nel tuo browser</li>
+                    <li>Non vengono mai trasmesse a server esterni (tranne al provider LLM scelto)</li>
+                    <li>Nell'elenco sono visibili in forma mascherata</li>
+                    <li>Puoi eliminarle in qualsiasi momento dalla gestione API Key</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" id="interfaccia">
+            <h2>Interfaccia Utente</h2>
+
+            <div class="card">
+                <h3>Barra Superiore</h3>
+                <ul>
+                    <li><strong>Menu (icona hamburger)</strong> - Apre il menu laterale con tutte le opzioni</li>
+                    <li><strong>HELP</strong> - Apre il manuale rapido dei comandi</li>
+                    <li><strong>README</strong> - Apre la documentazione tecnica (<code>readme.html</code>) in una nuova scheda</li>
+                    <li><strong>Versione</strong> - Badge con la versione app (0.1.1)</li>
+                    <li><strong>Upload</strong> - Carica file <code>.txt</code>/<code>.pdf</code>/<code>.docx</code>/<code>.odt</code> come sorgenti</li>
+                    <li><strong>Badge KB</strong> - Mostra la KB attiva</li>
+                    <li><strong>LLM</strong> - Seleziona provider e modello attivo</li>
+                    <li><strong>Badge modello</strong> - Visualizza <code>provider/modello</code> attivi</li>
+                    <li><strong>Log</strong> - Console tecnica: avanzamento build, esiti query, tempi e token</li>
+                    <li><strong>Tema</strong> - Alterna tra tema scuro e chiaro</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Aree di Lavoro</h3>
+                <ul>
+                    <li><strong>Area Output</strong> - Risposte con rendering Markdown, citazioni e Fonti verificate</li>
+                    <li><strong>Area Input</strong> - Scrivi qui domande e prompt per il Test LLM</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Pulsanti di Controllo</h3>
+                <ul>
+                    <li><strong>Invia (verde)</strong> - Esegue la query sulla KB (come <span class="kbd">Enter</span>)</li>
+                    <li><strong>Copia Output</strong> - Copia il testo dell'output negli appunti</li>
+                    <li><strong>Cancella Input</strong> - Svuota la casella di input</li>
+                    <li><strong>STOP (spinner)</strong> - Interrompe build o query in corso</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" id="documenti">
+            <h2>Documenti e Sorgenti</h2>
+
+            <div class="card">
+                <h3>Caricare Documenti</h3>
+                <p>
+                    Pulsante <strong>Upload</strong> nella barra superiore. Formati supportati:
+                </p>
+                <ul>
+                    <li><strong>TXT</strong> - Testo semplice (anche <code>.md</code>)</li>
+                    <li><strong>PDF</strong> - Testo estratto pagina per pagina nel browser</li>
+                    <li><strong>Word (.docx)</strong> - Testo estratto nel browser</li>
+                    <li><strong>ODT</strong> - Documenti OpenDocument</li>
+                </ul>
+                <p>
+                    I file diventano <strong>sorgenti</strong> della KB attiva: finché non lanci
+                    <strong>Crea</strong>, risultano come <code>new</code> in <em>Documenti Processati</em>.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Gestire le Sorgenti</h3>
+                <ul>
+                    <li><strong>Gestione Documenti</strong> - Elenco file con anteprima ed eliminazione.</li>
+                    <li><strong>Documenti Processati</strong> - <code>ingested</code> vs <code>new</code>/<code>changed</code>/<code>error</code>: sai sempre cosa resta da compilare.</li>
+                    <li>Una sorgente modificata mantiene il suo ID e viene ricompilata alla prossima <em>Crea</em>; le pagine già estratte vengono aggiornate per aggiunta, mai cancellate.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section" id="temi">
+            <h2>Temi, Reset e Logout</h2>
+
+            <div class="card">
+                <h3>Cambiare Tema</h3>
+                <p>
+                    Pulsante <strong>Tema</strong> nella barra superiore: alterna scuro (default) e chiaro.
+                    La selezione viene salvata automaticamente.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Reset Completo</h3>
+                <p>
+                    <strong>Menu &gt; Reset</strong> cancella <strong>TUTTI</strong> i dati: database delle KB
+                    (<code>wikijs:*</code>), stato locale, conversazioni, chiavi API e configurazione provider.
+                </p>
+                <div class="warning">
+                    Questa operazione non può essere annullata. Esporta prima con <em>Archivia</em> ciò che vuoi conservare.
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Logout</h3>
+                <p>
+                    <strong>Menu &gt; Logout</strong> esce e torna al login. In locale il login è bypassato,
+                    quindi rientri subito come <code>user_local</code>.
+                </p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Suggerimenti Utili</h2>
+
+            <div class="card">
+                <ul>
+                    <li><strong>Domande indipendenti</strong> - Ogni Invia riparte dalla KB: per raffinare, riformula la domanda invece di conversare</li>
+                    <li><strong>Citazioni verbatim</strong> - Se una risposta manca, la causa è spesso una parafrasi: prova a chiedere con le parole del documento</li>
+                    <li><strong>Hot-swap LLM</strong> - Cambia provider/modello senza ricaricare; confrontali a parità di domanda con <em>Test LLM</em></li>
+                    <li><strong>Compilazioni economiche</strong> - Usa un modello economico per la <em>Crea</em> e uno capace per le domande difficili</li>
+                    <li><strong>Markdown</strong> - Le risposte supportano formattazione Markdown (tabelle, codice, elenchi)</li>
+                    <li><strong>Retry e rate limit</strong> - Retry ×3 su errori transitori; sul 429 backoff adattivo e job in <code>rate_limited</code> invece di insistere</li>
+                    <li><strong>Interruzione</strong> - STOP interrompe build e query; le interruzioni 499 sono ignorate dalla UI</li>
+                    <li><strong>Telemetria minima</strong> - Solo eventi d'uso verso il worker WWWANALYZER (implementazione: <code>static/js/services/sender.js</code>, config in <code>static/js/services/config.js</code>); disattivata in automatico in ambiente locale</li>
+                </ul>
+            </div>
+            <p style="text-align:center;">
+                <a href="index.html" class="back-to-app">🚀 Apri wikijs</a>
+            </p>
+        </section>
+
+        <footer>
+            wikijs è un progetto focalizzato su verificabilità, privacy e AI lato client. Versione 0.1.1.
+        </footer>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        const body = document.body;
+        const sunIcon = themeBtn.querySelector('.icon-sun');
+        const moonIcon = themeBtn.querySelector('.icon-moon');
+
+        const savedTheme = localStorage.getItem('wikijs-theme') || 'dark';
+        body.setAttribute('data-theme', savedTheme);
+        sunIcon.style.display = savedTheme === 'light' ? 'none' : 'block';
+        moonIcon.style.display = savedTheme === 'light' ? 'block' : 'none';
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('wikijs-theme', newTheme);
+            sunIcon.style.display = newTheme === 'light' ? 'none' : 'block';
+            moonIcon.style.display = newTheme === 'light' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

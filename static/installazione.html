@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.ico">
+    <title>wikijs - Avvio in Locale</title>
+    <meta name="description" content="Come eseguire wikijs in locale sul tuo computer: basta un server statico, nessun build e nessun backend.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="wikijs - Avvio in Locale">
+    <meta property="og:description" content="Guida rapida per eseguire wikijs in locale: un comando, poi apri presentazione o app nel browser.">
+    <meta property="og:url" content="https://gmaterni.github.io/wikijs/installazione.html">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --secondary-bg: #1e293b;
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --link-color: #38bdf8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --accent-color: #0284c7;
+            --secondary-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --link-color: #0284c7;
+            --success-color: #059669;
+            --warning-color: #d97706;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-color);
+        }
+
+        h1 { margin: 0; }
+
+        code {
+            background: var(--secondary-bg);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        pre {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .theme-toggle {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .highlight {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1rem;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .warning::before { content: "⚠️"; margin-right: 0.5rem; }
+
+        .tip {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .tip::before { content: "💡"; margin-right: 0.5rem; }
+
+        .step {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .launch-box {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            border-top: 2px solid var(--accent-color);
+        }
+
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .back-links {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        footer {
+            margin-top: 4rem;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header>
+            <h1>wikijs — Avvio in Locale</h1>
+            <div class="header-actions">
+                <button class="theme-toggle" id="theme-btn" title="Cambia Tema">
+                    <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <section class="section">
+            <p>
+                wikijs è <strong>100% client-side</strong> e non richiede installazione:
+                niente build, niente backend, niente dipendenze da installare.
+                Basta servire la cartella del progetto con un piccolo web server statico
+                e aprire la pagina nel browser: dati e chiavi restano solo sulla tua macchina.
+            </p>
+            <div class="card highlight">
+                Perché il server locale? wikijs usa <strong>ES Modules</strong> nativi:
+                per motivi di sicurezza i browser li bloccano con <code>file://</code>.
+                Un comando e sei operativo.
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>1. Procurati i file di progetto</h2>
+
+            <div class="card">
+                <h3>Copia o clona la cartella</h3>
+                <p>Fatti dare la cartella del progetto (es. su chiavetta, archivio ZIP o clone del repository interno)
+                e aprila da terminale:</p>
+                <pre><code>cd wikijs</code></pre>
+                <div class="tip">Nessuna dipendenza da installare per l'app: gli unici <code>node_modules</code> presenti servono solo ai test in <code>test/kb-workflow/</code> (<code>npm test</code>).</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>2. Avvia il server locale</h2>
+            <div class="card">
+                <p>
+                    Dalla <strong>root del progetto</strong> (la cartella che contiene <code>static/</code>),
+                    avvia un web server statico. Il server va avviato dalla root perché l'app
+                    carica moduli e dati con percorsi relativi a <code>static/</code>.
+                </p>
+                <div class="warning">
+                    Se apri <code>static/index.html</code> direttamente con doppio click (<code>file://...</code>),
+                    la pagina resterà bianca o darà errori in console: è normale, manca il server locale.
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Con Python (già presente su molti sistemi)</h3>
+                <pre><code>cd wikijs
+python3 -m http.server 8123</code></pre>
+                <p>Poi apri nel browser:</p>
+                <pre><code>http://localhost:8123/static/wikijs.html   # presentazione
+http://localhost:8123/static/index.html     # app</code></pre>
+            </div>
+
+            <div class="card">
+                <h3>Con Node.js</h3>
+                <pre><code>cd wikijs
+npx serve . -l 8123</code></pre>
+                <p>Poi apri nel browser <code>http://localhost:8123/static/wikijs.html</code>.</p>
+            </div>
+
+            <div class="card">
+                <h3>Con VS Code</h3>
+                <p>
+                    Installa l'estensione <strong>Live Server</strong>, apri la cartella <code>wikijs</code> nell'editor,
+                    tasto destro su <code>static/index.html</code> → <strong>Open with Live Server</strong>.
+                </p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>3. Usa l'app</h2>
+            <div class="card">
+                <div class="step">
+                    <span class="step-number">1</span> In locale il login Google è <strong>bypassato</strong> (<code>user_local</code>): entri subito, senza account.
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span> Carica un documento con il pulsante <strong>Upload</strong> (<code>.txt</code>, <code>.pdf</code>, <code>.docx</code>, <code>.odt</code>), poi <strong>Menu → Knowledge Base → Crea</strong>.
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span> Scrivi la domanda e premi <strong>Invia</strong>: la risposta cita solo pagine verificate <code>[[slug]]</code>.
+                </div>
+                <div class="tip">
+                    Consulta la <a href="guida.html">guida utente completa</a> per tutti i comandi,
+                    e il <a href="readme.html">README tecnico</a> per architettura, storage e API da console.
+                </div>
+            </div>
+        </section>
+
+        <div class="launch-box">
+            <h2>Hai già il server avviato?</h2>
+            <p>Apri la presentazione o entra direttamente nell'app.</p>
+            <div class="back-links">
+                <a href="wikijs.html">← Torna alla presentazione</a> &nbsp;|&nbsp;
+                <a href="index.html">Apri wikijs</a> &nbsp;|&nbsp;
+                <a href="guida.html">Guida utente</a>
+            </div>
+        </div>
+
+        <footer>
+            wikijs è un progetto focalizzato su verificabilità, privacy e AI lato client.
+        </footer>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        const body = document.body;
+        const sunIcon = themeBtn.querySelector('.icon-sun');
+        const moonIcon = themeBtn.querySelector('.icon-moon');
+
+        const savedTheme = localStorage.getItem('wikijs-theme') || 'dark';
+        body.setAttribute('data-theme', savedTheme);
+        sunIcon.style.display = savedTheme === 'light' ? 'none' : 'block';
+        moonIcon.style.display = savedTheme === 'light' ? 'block' : 'none';
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('wikijs-theme', newTheme);
+            sunIcon.style.display = newTheme === 'light' ? 'none' : 'block';
+            moonIcon.style.display = newTheme === 'light' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>
