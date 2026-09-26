@@ -6,7 +6,7 @@
  * alias di `kbBuild` con `mode:"update"`.
  *
  * @module build
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */

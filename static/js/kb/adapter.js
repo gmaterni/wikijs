@@ -8,7 +8,7 @@
  * distinguono così guasti di trasporto e risposte fuori schema.
  *
  * @module kb/adapter
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */

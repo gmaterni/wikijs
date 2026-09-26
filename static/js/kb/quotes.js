@@ -5,7 +5,7 @@
  * testo normalizzato del sorgente la contiene per intero.
  *
  * @module quotes
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */

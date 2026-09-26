@@ -6,7 +6,7 @@
  * Include la derivazione adattiva del chunking dalla finestra del modello.
  *
  * @module params
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */

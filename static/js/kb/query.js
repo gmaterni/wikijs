@@ -5,7 +5,7 @@
  * 0 in `offline`), citazioni verificate e persistenza append-only.
  *
  * @module query
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */

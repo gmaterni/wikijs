@@ -5,7 +5,7 @@
  * con budget e cursore, risultati parziali in `staging`.
  *
  * @module jobs
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2026-09-25
  * @author WikiJS
  */
