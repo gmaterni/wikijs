@@ -767,7 +767,12 @@ const _actionDeleteKnowledgeBaseAsync = async function() {
     if (!hasChunks) { await alert("Nessuna Knowledge Base attiva da cancellare."); return; }
     if (!await confirm("Cancellare completamente la Knowledge Base attiva?")) return;
     const kbId = await getKbId();
-    await deleteKbDatabase(kbId);
+    const deleted = await deleteKbDatabase(kbId);
+    if (!deleted) {
+        await alert("ERRORE: eliminazione del database non riuscita. Stato invariato.");
+        UaLog.log("Cancellazione KB fallita: marcatori invariati.");
+        return;
+    }
     await clearKbMarkers();
     await updateActiveKbDisplay();
     UaLog.log("Knowledge Base cancellata.");
@@ -828,7 +833,7 @@ const _actionLoadKnowledgeBaseAsync = async function(key) {
 
     const status = await kbStatus({ kbId: kbId });
     const sources = Array.isArray(data.kbBundle.sources) ? data.kbBundle.sources : [];
-    const doclist = sources.map(function(row) { return row.name; });
+    const doclist = sources.filter(function(row) { return row.status === "ingested"; }).map(function(row) { return row.name; });
     await syncKbMarkers(kbId, { counts: status ? status.counts : {}, doclist: doclist });
     await updateActiveKbDisplay();
     await alert("Knowledge Base caricata correttamente.");
@@ -858,22 +863,36 @@ const _actionLoadConversationAsync = async function(key) {
 const _actionLogout = function() { WebId.clear(); window.location.replace("login.html"); };
 
 const _actionShowProcessedDocs = async function() {
-    const kbDoclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
-    const allDocNames = await DocsMgr.names() || [];
+    const kbId = await getKbId();
+    const sources = await listSources(kbId) || [];
     const jfh = UaJtfh();
     jfh.append('<div><h4>Documenti Processati nella KB</h4>');
-    if (kbDoclist.length === 0) {
+    if (sources.length === 0) {
         jfh.append('<p>Nessuna Knowledge Base ancora costruita.</p>');
     } else {
-        jfh.append('<table class="table-data"><tbody>');
-        kbDoclist.forEach(function(name) {
-            const stillPresent = allDocNames.includes(name);
-            const status = stillPresent
-                ? '<span class="status-presente">presente</span>'
-                : '<span class="status-assente">rimosso</span>';
-            jfh.append('<tr><td>' + name + '</td><td>' + status + '</td></tr>');
-        });
-        jfh.append('</tbody></table>');
+        const processed = sources.filter(function(row) { return !isPending(row); });
+        const available = sources.filter(function(row) { return isPending(row); });
+        jfh.append('<h5>Processati (' + processed.length + ')</h5>');
+        if (processed.length === 0) {
+            jfh.append('<p>Nessun documento processato.</p>');
+        } else {
+            jfh.append('<table class="table-data"><tbody>');
+            processed.forEach(function(row) {
+                jfh.append('<tr><td>' + row.name + '</td><td><span class="status-presente">processato</span></td></tr>');
+            });
+            jfh.append('</tbody></table>');
+        }
+        jfh.append('<h5>Disponibili da processare (' + available.length + ')</h5>');
+        if (available.length === 0) {
+            jfh.append('<p>Nessun documento in attesa.</p>');
+        } else {
+            jfh.append('<table class="table-data"><tbody>');
+            available.forEach(function(row) {
+                const state = row.status || "in attesa";
+                jfh.append('<tr><td>' + row.name + '</td><td><span class="status-assente">' + state + '</span></td></tr>');
+            });
+            jfh.append('</tbody></table>');
+        }
     }
     jfh.append('</div>');
     wnds.winfo.show(jfh.html());
@@ -1021,34 +1040,40 @@ const _collectValidDocumentsAsync = async function() {
 };
 
 /**
- * Confronta i documenti con `kb_doclist` e chiede conferma all'utente.
- * Elenco vuoto = prima costruzione (full), altrimenti incrementale (auto);
- * il delta new/changed/error resta responsabilità del motore.
+ * Confronta i documenti con lo stato reale e chiede conferma all'utente.
+ * Prima costruzione = nessuna sorgente `ingested` e nessun marcatore;
+ * altrimenti incrementale. Entrambi i rami mostrano gli elenchi di
+ * processati e disponibili per conteggi coerenti con `KB_DOCLIST` e motore.
  *
  * @param {Array} validDocs - Documenti correnti `{ name, text }`.
  * @param {Array} existingDoclist - Nomi dei documenti già elaborati.
  * @returns {Promise<boolean>} Vero se la compilazione può partire.
  */
 const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
-    const isFirstBuild = existingDoclist.length === 0;
+    const kbId = await getKbId();
+    const sources = await listSources(kbId) || [];
+    const ingested = sources.filter(function(row) { return !isPending(row); });
+    const pending = sources.filter(function(row) { return isPending(row); });
+    const processedNames = ingested.map(function(row) { return row.name; });
+    const sourceNames = new Set(sources.map(function(row) { return row.name; }));
+    const unregistered = validDocs.map(function(doc) { return doc.name; }).filter(function(name) { return !sourceNames.has(name); });
+    const availableNames = pending.map(function(row) { return row.name; }).concat(unregistered);
+    const isFirstBuild = ingested.length === 0 && existingDoclist.length === 0;
+    const _formatList = function(names) {
+        const listed = names.length > 0 ? names.join(", ") : "-";
+        return listed;
+    };
     if (isFirstBuild) {
-        const processed = existingDoclist.length;
-        const toProcess = validDocs.length;
-        const question = `Creare KB? ${processed} già processati, ${toProcess} da processare. Procedere?`;
+        const question = `Creare KB? ${processedNames.length} già processati (${_formatList(processedNames)}), ${availableNames.length} da processare (${_formatList(availableNames)}). Procedere?`;
         const confirmed = await confirm(question);
         return confirmed;
     }
-    const kbId = await getKbId();
-    const sources = await listSources(kbId) || [];
-    const pendingDocs = sources.filter(row => isPending(row));
-    const pendingCount = pendingDocs.length;
-    if (pendingCount === 0) {
+    if (availableNames.length === 0) {
         await alert("Tutti i documenti caricati sono già stati elaborati nella KB esistente. Nessun documento nuovo o modificato da elaborare.");
         const blocked = false;
         return blocked;
     }
-    const processedCount = existingDoclist.length;
-    const question = `Aggiornare KB? ${processedCount} già processati, ${pendingCount} da processare. Procedere?`;
+    const question = `Aggiornare KB? ${processedNames.length} già processati (${_formatList(processedNames)}), ${availableNames.length} da processare (${_formatList(availableNames)}). Procedere?`;
     const confirmed = await confirm(question);
     return confirmed;
 };
@@ -1177,7 +1202,10 @@ export const TextInput = {
         if (validDocs.length === 0) { await alert("Nessun documento valido trovato."); return; }
 
         const existingDoclist = await idbMgr.read(DATA_KEYS.KB_DOCLIST) || [];
-        const isFirstBuild = existingDoclist.length === 0;
+        const kbIdForFirst = await getKbId();
+        const sourcesForFirst = await listSources(kbIdForFirst) || [];
+        const ingestedForFirst = sourcesForFirst.filter(function(row) { return !isPending(row); });
+        const isFirstBuild = ingestedForFirst.length === 0 && existingDoclist.length === 0;
         const proceed = await _confirmKnowledgeBuildAsync(validDocs, existingDoclist);
         if (!proceed) return;
 
@@ -1847,6 +1875,10 @@ export const bindEventListener = function() {
                 const sel = document.querySelectorAll(".doc-checkbox:checked");
                 if (sel.length && await confirm(`Eliminare ${sel.length} documenti?`)) {
                     for (const cb of sel) await DocsMgr.delete(cb.dataset.docName);
+                    const kbId = await getKbId();
+                    const sources = await listSources(kbId) || [];
+                    const doclist = sources.filter(function(row) { return row.status === "ingested"; }).map(function(row) { return row.name; });
+                    await idbMgr.create(DATA_KEYS.KB_DOCLIST, doclist);
                     wnds.winfo.close();
                 }
             };
@@ -1890,14 +1922,21 @@ export const bindEventListener = function() {
 
             jfh.append('<div class="ed-wrap">');
 
-            // --- Knowledge Base Attiva (kvStore) ---
+            // --- Knowledge Base Attiva (stato vivo) ---
+            const kbIdLive = await getKbId();
+            const liveStatus = await kbStatus({ kbId: kbIdLive });
+            const liveSources = await listSources(kbIdLive) || [];
+            const liveCounts = liveStatus ? liveStatus.counts : { sources: 0, pages: 0 };
+            const liveIngested = liveSources.filter(function(row) { return !isPending(row); });
+            const livePending = liveSources.filter(function(row) { return isPending(row); });
             const activeChunks = _kv(DATA_KEYS.PHASE0_CHUNKS);
-            if (activeChunks) {
+            if (activeChunks || liveSources.length > 0 || (liveCounts.pages || 0) > 0) {
                 jfh.append('<h4>Knowledge Base Attiva</h4><table class="table-data"><tbody>');
-                const docList = _kv(DATA_KEYS.KB_DOCLIST);
-                const docCount = docList ? docList.value.length : 0;
-                _row(DATA_KEYS.KB_DOCLIST, `Documenti: ${docCount}`, docList ? docList.value : null);
-                _row(DATA_KEYS.PHASE0_CHUNKS, `Chunks: ${activeChunks.value.length}`, activeChunks.value);
+                const liveDocNames = liveIngested.map(function(row) { return row.name; });
+                _row(DATA_KEYS.KB_DOCLIST, `Documenti processati: ${liveIngested.length}, disponibili: ${livePending.length}`, liveDocNames);
+                const pagesLive = liveCounts.pages || 0;
+                const sourcesLive = liveCounts.sources || 0;
+                _row(DATA_KEYS.PHASE0_CHUNKS, `Pagine: ${pagesLive}, Sorgenti: ${sourcesLive}`, liveStatus ? liveStatus : null);
                 _row(DATA_KEYS.PHASE1_INDEX, 'Indice di ricerca', _kv(DATA_KEYS.PHASE1_INDEX)?.value);
                 const childMap = _kv(DATA_KEYS.KB_CHILDCHUNKS);
                 const childDocCount = childMap ? Object.keys(childMap.value).length : 0;

@@ -58,6 +58,10 @@ export const DocsMgr = {
             console.error("DocsMgr.add: parametri non validi");
             return false;
         }
+        if (doc.trim().length === 0) {
+            console.error("DocsMgr.add: testo vuoto");
+            return false;
+        }
         const kbId = await getKbId();
         const saved = await addSource({ kbId: kbId, name: name, mime: "text/plain", text: doc });
         if (!saved) {

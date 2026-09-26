@@ -24,7 +24,7 @@ export const help0_html = `
     <div>
         <strong class="help-section-title">Barra Superiore (Header)</strong>
         <div class="help-grid">
-            <strong>Icona Menu</strong> <span>Apre il menu laterale con tutte le sezioni (KB, Chat, Dati, API Key, Logout).</span>
+            <strong>Icona Menu</strong> <span>Apre il menu laterale con tutte le sezioni (Documenti, KB, Conversazione, Gestione Dati, LLM, API Key).</span>
             <strong>HELP</strong> <span>Apre questa finestra con l'elenco completo dei comandi.</span>
             <strong>Upload</strong> <span>Carica file PDF, DOCX o TXT nella Knowledge Base.</span>
             <strong>LLM</strong> <span>Sceglie il provider AI (Gemini, Mistral, OpenRouter, ecc.) e il modello.</span>
@@ -47,6 +47,13 @@ export const help0_html = `
     <hr>
 
     <div>
+        <strong class="help-section-title">Menu Laterale &mdash; Documenti</strong>
+        <div class="help-grid">
+            <strong>Elenco Documenti</strong> <span>Mostra i file caricati con anteprima ed eliminazione.</span>
+        </div>
+    </div>
+
+    <div>
         <strong class="help-section-title">Menu Laterale &mdash; Knowledge Base</strong>
         <div class="help-grid">
             <strong>Crea</strong> <span>Genera l'indice di ricerca Lunr BM25 dai documenti caricati.</span>
@@ -54,6 +61,7 @@ export const help0_html = `
             <strong>Archivia</strong> <span>Salva la KB corrente con un nome personalizzato per usi futuri.</span>
             <strong>Gestisci</strong> <span>Elenca, attiva, esporta o elimina le KB archiviate.</span>
             <strong>Ripristina</strong> <span>Attiva una KB da un file di backup salvato.</span>
+            <strong>Documenti Processati</strong> <span>Mostra processati e disponibili da processare in due gruppi.</span>
         </div>
     </div>
 
@@ -71,9 +79,7 @@ export const help0_html = `
     <div>
         <strong class="help-section-title">Menu Laterale &mdash; Gestione Dati</strong>
         <div class="help-grid">
-            <strong>Elenco Documenti</strong> <span>Mostra i file caricati con anteprima ed eliminazione.</span>
             <strong>Riepilogo Dati</strong> <span>Mostra KB, conversazione e archivi raggruppati per tipo.</span>
-            <strong>Reset</strong> <span>Cancella ogni dato: KB, conversazioni, documenti e chiavi.</span>
         </div>
     </div>
 
@@ -99,7 +105,7 @@ export const help0_html = `
     <div>
         <strong class="help-section-title">Menu Laterale &mdash; Sistema</strong>
         <div class="help-grid-last">
-            <strong>Test Provider</strong> <span>Verifica tutti i provider e modelli configurati (apre pagina di test dedicata).</span>
+            <strong>Reset</strong> <span>Cancella ogni dato: KB, conversazioni, documenti e chiavi.</span>
             <strong>Logout</strong> <span>Esci dall'applicazione e torna alla schermata di login.</span>
         </div>
     </div>

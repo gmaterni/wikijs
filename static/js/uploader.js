@@ -268,22 +268,6 @@ export const documentUploader = {
     const fileName = file.name;
     const fileListContainer = document.getElementById("file-list-container");
 
-    // Controlla duplicati ma NON blocca il processo
-    if (await DocsMgr.exists(fileName)) {
-      if (!silent) {
-        await alert(`Il file "${fileName}"già in archivio. Verrà  ignorato.`);
-      }
-
-      // Aggiunge comunque un elemento visivo
-      const fileItem = document.createElement("div");
-      fileItem.className = "file-list-item duplicate";
-      fileItem.textContent = `${fileName} - Duplicato (ignorato)`;
-      fileListContainer.appendChild(fileItem);
-
-      const duplicateResult = { status: "duplicate", fileName };
-      return duplicateResult;
-    }
-
     const fileExtension = file.name.split(".").pop().toLowerCase();
 
     let result = null;
@@ -324,7 +308,12 @@ export const documentUploader = {
         throw new Error("Il documento non contiene abbastanza testo leggibile (possibile PDF d'immagine o solo link).");
       }
 
-      await DocsMgr.add(fileName, cleanedText);
+      // Nessun pre-blocco per nome: la decisione spetta al confronto hash di `addSource`
+      // (stesso contenuto = invariato, contenuto diverso = `changed`).
+      const added = await DocsMgr.add(fileName, cleanedText);
+      if (!added) {
+        throw new Error("Registrazione documento non riuscita.");
+      }
 
       const fileItem = document.createElement("div");
       fileItem.className = "file-list-item success";

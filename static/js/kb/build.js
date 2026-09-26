@@ -36,6 +36,10 @@ const addSource = async function (opts) {
         console.error("addSource: argomenti non validi");
         return null;
     }
+    if (opts.text.trim().length === 0) {
+        console.error("addSource: testo vuoto");
+        return null;
+    }
     const db = await openDb(opts.kbId);
     if (!db) {
         return null;

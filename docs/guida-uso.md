@@ -19,7 +19,7 @@ Le API sono anche in console: `kbInit`, `kbAddSource`, `kbBuild`, `kbUpdate`,
 
 La KB attiva è registrata nello stato applicativo in IndexedDB/Dexie
 (`active_kb` nel database `wikijs_app_<userId>`, default `demo`); per lavorare
-su più KB si usa la coppia Archivia/Carica (bundle JSON). L'LLM si configura
+su più KB si usa la coppia Archivia/Ripristina (bundle JSON). L'LLM si configura
 dal pulsante **LLM** nella barra in alto (albero provider/modelli) o dalla
 sezione **LLM** del menu.
 
@@ -45,21 +45,22 @@ console); senza LLM restano attivi `offline` e selezione locale.
 
 ## Menu laterale
 
-## knowldge Base
+## Documenti
+| Elenco Documenti | Visualizza ed elimina le sorgenti. |
+## Knowledge Base
 | Crea || Estrae le pagine dalle sorgenti nuove o modificate, mai da quelle già completate. |
 | Cancella | Elimina il database della KB attiva. |
 | Archivia | Salva la KB corrente in un archivio locale con un nome scelto. |
 | Gestisci | — | Elenca, attiva, esporta o elimina le KB archiviate. |
-| Carica |  Importa una KB da file JSON. |
-| Documenti Processati  Sorgenti della KB con stato (`elaborato`/`in attesa`). |
+| Ripristina |  Importa una KB da file JSON. |
+| Documenti Processati | Processati (`ingested`) e disponibili da processare (`new`/`changed`/`error`) in due gruppi. |
 ## Conversazione
 | Visualizza Conversazione  | Storico della chat in formato testo. |
 | Cancella Conversazione | Cancella l'intero storico della chat e la vista; le query successive restano indipendenti. |
 | Archivia |  Salva la chat corrente (solo storico) in un archivio locale. |
 | Gestisci— | Elenca, attiva, esporta o elimina le chat archiviate. |
-| Carica  | Importa una chat da file JSON. |
-## Gestione Documenti
-| Elenco Documenti | | Visualizza ed elimina le sorgenti. |
+| Ripristina  | Importa una chat da file JSON. |
+## Gestione Dati
 | Riepilogo Dati  | Conteggi KB, conversazione, archivi e configurazione. |
 ## LLM
 | Test LLM | Prova il prompt scritto nei modelli selezionati del provider scelto. |
