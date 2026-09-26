@@ -1,7 +1,7 @@
 # Guida d'uso — WikiJS (`static/`)
 
 Versione 0.1.0. Dettagli di design in `docs/`: `architettura-knowledge-base.md`,
-`generazione-estensione-knowledge-base.md`, `workflow-query.md`.
+`compilazione-knowledge-base.md`, `workflow-query.md`.
 
 L'interfaccia (barra, menu laterale, finestre, stile LESS) è la stessa
 dell'applicazione precedente: cambiano solo il motore di knowledge base (WikiJS)

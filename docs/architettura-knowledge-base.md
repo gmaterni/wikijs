@@ -4,7 +4,7 @@
 **Data**: 24/09/2026
 **Ambito**: implementazione in JavaScript **lato client** di una knowledge base wiki compilata (pattern LLM Wiki, da `karpathy/`), dati interamente in **IndexedDB**, accesso ai modelli tramite adapter fornito dall'applicazione ospite (librerie già testate dal committente).
 **Documenti correlati**:
-- `generazione-estensione-knowledge-base.md` — workflow `kb-init`, `kb-build`/`kb-update`
+- `compilazione-knowledge-base.md` — workflow `kb-init`, `kb-build`/`kb-update`
 - `workflow-query.md` — pipeline di interrogazione
 
 **Stato epistemico**: nessuna cifra di prestazione è misurata. Dove compare una stima è marcata `[STIMA]`.
@@ -402,7 +402,7 @@ Se il catalogo supera `catalogTokenBudget`, `kbQuery` usa il percorso a due live
 5. **Slug deterministici**: l'LLM non assegna mai identificatori (eredità dell'invariante I2 di `multi_index`).
 6. **LLM per funzione**: la selezione pagine usa un modello rapido, l'estrazione e la risposta un modello forte (§4.2).
 7. **Contraddizioni conservate**: append, mai cancellazione (eredità di karpathy).
-8. **`kb-update` è un alias**, non un motore separato: stessa pipeline di `kb-build` con `mode:"update"` (motivazione in `generazione-estensione-knowledge-base.md` §1).
+8. **`kb-update` è un alias**, non un motore separato: stessa pipeline di `kb-build` con `mode:"update"` (motivazione in `compilazione-knowledge-base.md` §1).
 
 ---
 

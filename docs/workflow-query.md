@@ -2,7 +2,7 @@
 
 **Versione**: 0.1 (specifica di design, non validata)
 **Data**: 24/09/2026
-**Riferimenti**: `architettura-knowledge-base.md` (store, API, invarianti), `generazione-estensione-knowledge-base.md` (build e citazioni verificate).
+**Riferimenti**: `architettura-knowledge-base.md` (store, API, invarianti), `compilazione-knowledge-base.md` (build e citazioni verificate).
 
 ---
 

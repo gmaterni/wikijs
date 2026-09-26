@@ -1,4 +1,4 @@
-# Generazione ed estensione della knowledge base — WikiJS
+# Compilazione della knowledge base — WikiJS
 
 **Versione**: 0.1 (specifica di design, non validata)
 **Data**: 24/09/2026
