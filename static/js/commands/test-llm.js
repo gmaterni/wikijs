@@ -171,7 +171,7 @@ const _showProviderWindow = function(grouped, prompt) {
     jfh.append('<div class="' + PICK_CONTAINER_CLASS + ' window-info">');
     jfh.append('<div class="btn-wrapper">');
     jfh.append("<h4>Test LLM</h4>");
-    jfh.append('<button class="btn-close" data-help="Chiudi" data-action="test-close">X</button>');
+    jfh.append('<button class="btn-close" data-help="Chiudi|Chiude la scelta del provider." data-action="test-close">X</button>');
     jfh.append("</div>");
     jfh.append('<p class="test-llm-pick-hint">Seleziona provider per il test</p>');
     jfh.append('<div class="test-llm-prompt-box">' + promptText + "</div>");
@@ -224,7 +224,7 @@ const _showSummaryWindow = function(provider, outcomes) {
     jfh.append('<div class="window-info test-llm-summary">');
     jfh.append('<div class="btn-wrapper">');
     jfh.append("<h4>Riepilogo " + title + "</h4>");
-    jfh.append('<button class="btn-close" data-help="Chiudi" data-action="summary-close">X</button>');
+    jfh.append('<button class="btn-close" data-help="Chiudi|Chiude il riepilogo del test." data-action="summary-close">X</button>');
     jfh.append("</div>");
     jfh.append('<table class="table-data">');
     jfh.append("<thead><tr><th>Modello</th><th>Response</th><th>Tempo / Errore</th></tr></thead>");
@@ -278,11 +278,11 @@ const _showSummaryWindow = function(provider, outcomes) {
 const _logTrial = function(provider, model, outcome, requestChars) {
     const target = provider + "/" + model;
     if (outcome.ok) {
-        const line = ">>> " + target + " | req: " + requestChars + " char | resp: " + outcome.responseChars + " char | tempo: " + outcome.elapsedSec + " s <<<";
+        const line = "Test " + target + ": req " + requestChars + " char, resp " + outcome.responseChars + " char, " + outcome.elapsedSec + " s";
         UaLog.log(line);
         return;
     }
-    const errLine = ">>> ERRORE " + target + " | codice: " + outcome.code + " | " + outcome.reason + " | req: " + requestChars + " char | tempo: " + outcome.elapsedSec + " s <<<";
+    const errLine = "Test " + target + " ERRORE " + outcome.code + ": " + outcome.reason + " (" + outcome.elapsedSec + " s)";
     UaLog.log(errLine);
 };
 
@@ -419,9 +419,9 @@ export const runProviderTest = async function(provider, prompt) {
     }
 
     if (_cancelRequested) {
-        UaLog.log(">>> " + provider + " interrotto dall'utente (" + outcomes.length + " prove) <<<");
+        UaLog.log(provider + " interrotto: " + outcomes.length + " prove.");
     } else {
-        UaLog.log(">>> " + provider + " completato (" + outcomes.length + " prove) <<<");
+        UaLog.log(provider + " completato: " + outcomes.length + " prove.");
     }
 
     try {

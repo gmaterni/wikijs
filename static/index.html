@@ -51,11 +51,11 @@
       </label>
 
       <div class="head-wrapper">
-        <button id="btn-help" class="help" data-help="Istruzioni|Apre il manuale utente con architettura, guida operativa e specifiche dell'app.">HELP</button>
-        <button id="btn-readme" class="readme" data-help="README|Apre il README tecnico del progetto in una nuova finestra.">README</button>
+        <button id="btn-help" class="help" data-help="Istruzioni|Apre il manuale con guida operativa e specifiche.">HELP</button>
+        <button id="btn-readme" class="readme" data-help="README|Apre la documentazione tecnica in una nuova finestra.">README</button>
         <span id="app-version" class="app-version">v0.1.0</span>
 
-        <button id="btn-upload" class="upload" data-help="Caricamento Documenti|Carica file PDF, TXT o DOCX dal tuo computer per la Knowledge Base.">
+        <button id="btn-upload" class="upload" data-help="Caricamento Documenti|Seleziona file PDF, TXT o DOCX per la Knowledge Base.">
           <svg class="icon" viewBox="0 0 24 24">
             <path d="M20 15v2H4v-2H2v5h20v-5zM13 5V1h-2v4H7l5 5 5-5z" />
           </svg>
@@ -63,11 +63,11 @@
         <span id="active-kb-display" class="active-kb-display"></span>
         <button id="btn-provider-settings" class="provider-settings" data-help="Configurazione LLM|Seleziona il provider AI e il modello specifico.">LLM</button>
         <span id="active-model-display" class="active-model-display"></span>
-        <button class="log" id="id_log">Log</button>
+        <button class="log" id="id_log" data-help="Registro Eventi|Mostra i messaggi di log in tempo reale.">Log</button>
 
       </div>
 
-      <button id="btn-theme-toggle" class="btn-theme-toggle">
+      <button id="btn-theme-toggle" class="btn-theme-toggle" data-help="Tema|Alterna tra chiaro e scuro.">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="5" />
           <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
@@ -80,39 +80,37 @@
       <div class="menu-box">
         <ul>
           <li><b>Knowledge Base</b></li>
-          <li><a href="#" id="menu-create-kb" data-help="Crea Knowledge Base|Genera l'indice di ricerca dai documenti caricati. Necessario prima di avviare una conversazione.">Crea</a></li>
-          <li><a href="#" id="menu-delete-kb" data-help="Cancella KB|Elimina la Knowledge Base attiva e i relativi indici di ricerca.">Cancella</a></li>
-          <li><a href="#" id="menu-save-kb" data-help="Archivia KB|Salva la Knowledge Base corrente con un nome personalizzato per usi futuri.">Archivia</a></li>
-          <li><a href="#" id="menu-elenco-kb" data-help="Gestisci KB|Elenca, attiva, esporta o elimina le Knowledge Base archiviate.">Gestisci</a></li>
-          <li><a href="#" id="menu-restore-kb" data-help="Carica KB|Carica una Knowledge Base da un file di backup salvato in precedenza.">Carica</a></li>
-          <li><a href="#" id="menu-processed-docs" data-help="Documenti Processati|Mostra l'elenco dei documenti usati nell'ultima costruzione della Knowledge Base, con indicazione di quali sono ancora presenti tra i caricati.">Documenti Processati</a></li>
+          <li><a href="#" id="menu-create-kb" data-help="Crea Knowledge Base|Genera l'indice di ricerca dai documenti caricati.">Crea</a></li>
+          <li><a href="#" id="menu-delete-kb" data-help="Cancella KB|Elimina la KB attiva e i relativi indici di ricerca.">Cancella</a></li>
+          <li><a href="#" id="menu-save-kb" data-help="Archivia KB|Salva la KB corrente con un nome per usi futuri.">Archivia</a></li>
+          <li><a href="#" id="menu-elenco-kb" data-help="Gestisci KB|Elenca, attiva, esporta o elimina le KB archiviate.">Gestisci</a></li>
+          <li><a href="#" id="menu-restore-kb" data-help="Ripristina|Attiva una KB da un file di backup salvato.">Ripristina</a></li>
+          <li><a href="#" id="menu-processed-docs" data-help="Documenti Processati|Elenca i documenti dell'ultima build e presenza attuale.">Documenti Processati</a></li>
           <li class="separator"></li>
           <li><b>Conversazione</b></li>
-          <li><a href="#" id="menu-view-context" data-help="Visualizza Contesto|Mostra il contenuto estratto usato dall'AI per rispondere.">Visualizza Contesto</a></li>
-          <li><a href="#" id="menu-view-convo" data-help="Visualizza Conversazione|Mostra l'intero storico della chat in formato testo.">Visualizza Conversazione</a></li>
-          <li><a href="#" id="menu-clear-context" data-help="Cancella Contesto|Azzeramento totale: cancella il contesto, la prima domanda e l'intera conversazione. La chat torna come appena avviata.">Cancella Contesto</a></li>
-          <li><a href="#" id="menu-clear-conversazione" data-help="Cancella Conversazione|Elimina solo i messaggi successivi alla prima domanda, mantenendo intatti il contesto e la domanda iniziale.">Cancella Conversazione</a></li>
-          <li><a href="#" id="menu-save-convo" data-help="Archivia Conversazione|Salva la cronologia della chat corrente con un nome personalizzato.">Archivia</a></li>
-          <li><a href="#" id="menu-elenco-convo" data-help="Gestisci Conversazioni|Elenca, attiva, esporta o elimina le conversazioni archiviate.">Gestisci</a></li>
-          <li><a href="#" id="menu-restore-convo" data-help="Carica Conversazione|Carica una conversazione da un file di backup salvato in precedenza.">Carica</a></li>
+          <li><a href="#" id="menu-view-convo" data-help="Visualizza|Mostra lo storico della chat in formato testo.">Visualizza</a></li>
+          <li><a href="#" id="menu-clear-conversazione" data-help="Cancella|Elimina lo storico della chat e la vista corrente.">Cancella</a></li>
+          <li><a href="#" id="menu-save-convo" data-help="Archivia Conversazione|Salva la chat corrente con un nome personalizzato.">Archivia</a></li>
+          <li><a href="#" id="menu-elenco-convo" data-help="Gestisci Conversazioni|Elenca, attiva, esporta o elimina le chat salvate.">Gestisci</a></li>
+          <li><a href="#" id="menu-restore-convo" data-help="Ripristina|Attiva una conversazione da un file di backup.">Ripristina</a></li>
           <li class="separator"></li>
           <li><b>Gestione Dati</b></li>
-          <li><a href="#" id="menu-elenco-docs" data-help="Elenco Documenti|Mostra l'elenco dei documenti caricati nel sistema con opzioni di visualizzazione ed eliminazione.">Elenco Documenti</a></li>
-          <li><a href="#" id="menu-elenco-dati" data-help="Riepilogo Dati|Mostra i dati in IndexedDB raggruppati per categoria: Knowledge Base attiva, Conversazione attiva, KB archiviate, Conversazioni archiviate, Configurazione.">Riepilogo Dati</a></li>
+          <li><a href="#" id="menu-elenco-docs" data-help="Elenco Documenti|Mostra i file caricati con anteprima ed eliminazione.">Elenco Documenti</a></li>
+          <li><a href="#" id="menu-elenco-dati" data-help="Riepilogo Dati|Mostra KB, conversazione e archivi raggruppati per tipo.">Riepilogo Dati</a></li>
           <li class="separator"></li>
           <li><b>LLM</b></li>
-          <li><a href="#" id="menu-test-llm" data-help="Test LLM|Esegue il test sugli LLM di un provider, utilizzando il prompt.">Test LLM</a></li>
-          <li><a href="#" id="menu-reset-llm" data-help="Reset LLM|Azzera la selezione attiva e ripristina tutti i modelli disponibili dai file locali.">Reset LLM</a></li>
-          <li><a href="#" id="menu-llm-update" data-help="Aggiorna LLM|Testa i modelli dei provider con chiave attiva e aggiorna l'albero di selezione LLM.">Aggiorna LLM</a></li>
-          <li><a href="#" id="menu-provider-tree" data-help="Seleziona LLM|Apre l'elenco dei modelli scaricati con checkbox per aggiornare l'albero di scelta LLM.">Seleziona LLM</a></li>
+          <li><a href="#" id="menu-test-llm" data-help="Test LLM|Prova i modelli del provider scelto usando il prompt.">Test LLM</a></li>
+          <li><a href="#" id="menu-reset-llm" data-help="Reset LLM|Ripristina i modelli di default dai file locali.">Reset LLM</a></li>
+          <li><a href="#" id="menu-llm-update" data-help="Aggiorna LLM|Verifica i modelli con chiave attiva e aggiorna l'albero.">Aggiorna LLM</a></li>
+          <li><a href="#" id="menu-provider-tree" data-help="Seleziona LLM|Mostra i modelli verificati per aggiornare l'albero.">Seleziona LLM</a></li>
           <li class="separator"></li>
           <li><b>API Key</b></li>
-          <li><a href="#" id="menu-default-api-keys" data-help="API Keys Default|Ripristina le chiavi API predefinite, sovrascrivendo quelle attuali.">API Keys Default</a></li>
-          <li><a href="#" id="menu-add-api-key" data-help="Gestione API Key|Aggiungi, attiva o elimina le tue chiavi API personali.">Gestisci API Key</a></li>
+          <li><a href="#" id="menu-default-api-keys" data-help="API Keys Default|Ripristina le chiavi predefinite salvate.">API Keys Default</a></li>
+          <li><a href="#" id="menu-add-api-key" data-help="Gestione API Key|Aggiungi, attiva o elimina le chiavi personali.">Gestisci API Key</a></li>
           <li class="separator"></li>
-          <li><a href="#" id="menu-reset" class="delete menu-reset" data-help="Reset|Cancella TUTTI i dati: KB, conversazioni, documenti, chiavi API e configurazione. Due conferme richieste.">Reset</a></li>
+          <li><a href="#" id="menu-reset" class="delete menu-reset" data-help="Reset|Elimina tutti i dati dell'app con doppia conferma.">Reset</a></li>
           <li class="separator"></li>
-          <li><a href="#" id="menu-logout" class="delete" data-help="Logout|Esci dall'applicazione e torna alla schermata di login.">Logout</a></li>
+          <li><a href="#" id="menu-logout" class="delete" data-help="Logout|Esci dall'app e torna alla schermata di login.">Logout</a></li>
         </ul>
       </div>
 
@@ -130,30 +128,22 @@
 
       <div class="item item2">
         <div class="input-wrapper">
-          <textarea class="text-input" placeholder="Scrivi qui... " rows="2"></textarea>
+          <textarea class="text-input" placeholder="Scrivi qui... " rows="2" data-help="Domanda|Scrivi qui la richiesta per la Knowledge Base."></textarea>
         </div>
-        <div class="input-context-actions">
-          <button class="clear-input" data-help="Cancella Input">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+        <div class="input-utility-actions">
+          <button id="btn-action3-continue-convo" data-help="Invia|Avvia la query sulla KB con risposta e fonti verificate.">
+            <svg class="btn-icon-svg" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M8 5v14l11-7z" />
             </svg>
           </button>
-          <button id="btn-copy-output" data-help="Copia Output|Copia il testo dell'output della chat negli appunti.">
+          <button id="btn-copy-output" data-help="Copia|Trasferisce il testo dell'output negli appunti.">
             <svg class="icon" viewBox="0 0 24 24">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
             </svg>
           </button>
-        </div>
-
-        <div class="input-actions">
-          <button id="btn-action3-continue-convo" data-help="Continua Dialogo|Invia la nuova domanda mantenendo la memoria della chat e del contesto.">
-            <svg class="btn-icon-svg" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M8 5v14l11-7z" />
-            </svg>
-          </button>
-          <button id="btn-action2-start-convo" data-help="Avvia Conversazione|Cerca il contesto nei documenti e interroga l'AI per la prima risposta.">
-            <svg class="btn-icon-svg" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M8 5v14l11-7z" />
+          <button class="clear-input" data-help="Cancella|Elimina il testo nella casella di input.">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
             </svg>
           </button>
         </div>

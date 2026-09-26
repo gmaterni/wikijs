@@ -2,6 +2,36 @@
 //  COMPONENTI UI: MENU LATERALE
 // ===================================================================
 
+// Mixin condiviso label menu / pulsanti header (task 1.1):
+// nucleo tipografico delle voci menu riusato dagli header Upload, LLM, Log.
+.menu-label() {
+  font-family: @fsans;
+  font-size: @fsize-menu;
+  padding: @menu-label-padding;
+  border-radius: @menu-label-radius;
+  transition: all 0.2s ease;
+}
+.menu-label-hover() {
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+  }
+}
+// Grafica delle LABEL di sezione del menu (li b): riusata dai pulsanti
+// header Upload, LLM e Log su richiesta specifiche.
+.menu-section-label() {
+  font-family: @fsans;
+  text-align: center;
+  font-weight: 600;
+  max-width: 20vw;
+  display: block;
+  padding: 6px 8px;
+  border-radius: @menu-label-radius;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .menu-icon {
   box-sizing: border-box;
   display: block;
@@ -68,21 +98,14 @@
       margin: 0;
 
       a {
-        font-family: @fsans;
+        .menu-label();
         text-decoration: none;
         display: block;
-        padding: 1px 8px;
-        border-radius: 6px;
-        transition: all 0.2s ease;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
         max-width: 20vw;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.05);
-          text-decoration: none;
-        }
+        .menu-label-hover();
 
         &.delete {
           text-align: center;
@@ -121,15 +144,7 @@
       }
 
       b {
-        font-family: @fsans;
-        text-align: center;
-        font-weight: 600;
-        max-width: 20vw;
-        display: block;
-        padding: 6px 8px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+        .menu-section-label();
       }
     }
   }

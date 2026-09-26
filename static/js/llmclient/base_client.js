@@ -242,6 +242,14 @@ class BaseClient {
 
     let result = null;
 
+    // Request leggibile su console.debug (dev): JSON formattato, chiave mai in chiaro.
+    try {
+      const safeUrl = String(url).replace(/([?&]key=)[^&]*/i, "$1***");
+      console.debug(this.constructor.name + "._fetch request: " + safeUrl + "\n" + JSON.stringify(payload, null, 2));
+    } catch (e) {
+      console.error(this.constructor.name + "._fetch request log:", e);
+    }
+
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -265,6 +273,11 @@ class BaseClient {
         result = this._createResult(false, null, null, httpErr);
       } else {
         const respJson = await response.json();
+        try {
+          console.debug(this.constructor.name + "._fetch response:\n" + JSON.stringify(respJson, null, 2));
+        } catch (e) {
+          console.error(this.constructor.name + "._fetch response log:", e);
+        }
         result = this._createResult(true, respJson);
       }
     } catch (error) {

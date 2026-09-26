@@ -53,11 +53,9 @@ console); senza LLM restano attivi `offline` e selezione locale.
 | Carica |  Importa una KB da file JSON. |
 | Documenti Processati  Sorgenti della KB con stato (`elaborato`/`in attesa`). |
 ## Conversazione
-| Visualizza Contesto  | Ultima domanda, pagine usate e citazioni verificate. |
 | Visualizza Conversazione  | Storico della chat in formato testo. |
-| Cancella Contesto |  Azzera conversazione  |
-| Cancella Conversazione | Conserva prima domanda e prima risposta. |
-| Archivia |  Salva la chat corrente in un archivio locale. |
+| Cancella Conversazione | Cancella l'intero storico della chat e la vista; le query successive restano indipendenti. |
+| Archivia |  Salva la chat corrente (solo storico) in un archivio locale. |
 | Gestisci— | Elenca, attiva, esporta o elimina le chat archiviate. |
 | Carica  | Importa una chat da file JSON. |
 ## Gestione Documenti
@@ -86,9 +84,8 @@ mostra la KB attiva e il badge LLM mostra `provider/modello` (o `LLM: ospite`).
 |---|---|
 | Cancella Input (cestino) | Svuota la casella di domanda. |
 | Copia Output | Copia il testo dell'output negli appunti. |
-| Avvia (giallo) | Nuova conversazione: `kbQuery({ kbId, question, mode: "llm" })`, contesto salvato per «Visualizza Contesto». |
-| Continua (verde) | Prosegue la conversazione: pipeline stateless, ogni invio riesegue la query con l'ultimo messaggio utente (citazioni `[[slug]]`). |
-| Invio | Come Continua (`Shift+Invio` va a capo). |
+| Invia (verde) | Esegue una query indipendente sulla Knowledge Base: `kbQuery({ kbId, question, mode: "llm" })`, risposta con citazioni `[[slug]]`, fonti verificate e riga di provenienza. |
+| Invio | Come il pulsante Invia (`Shift+Invio` va a capo). |
 
 ## Parametri principali (`meta.params`)
 
@@ -111,7 +108,7 @@ sovrascritto; in UaLog compare la suddivisione effettiva.
 - Slug deterministici mai dall'LLM; rinominazione vietata (pagina nuova + `[[slug|testo]]`).
 - Contraddizioni in append, mai cancellazioni; pagine in quarantena escluse dalle query.
 - Oltre `catalogTokenBudget` la query usa il percorso a due livelli (3 chiamate, dichiarate).
-- "Cancella Contesto/Conversazione" agiscono sulla vista (stato UI in
+- "Cancella Conversazione" agisce sulla vista (stato UI in
   `wikijs_app_<userId>`): `outputs` e `logs` restano append-only nel database,
   come richiesto dall'invariante I6.
 - Eventi d'uso: inviati con nome applicazione `wikijs` all'endpoint

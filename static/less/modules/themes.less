@@ -117,14 +117,22 @@
       }
     }
     .head-wrapper {
-      .log,
-      .help,
-      .provider-settings,
-      .upload {
+      .help {
         color: @text;
         background: @btn-bg;
         &:hover {
           background: @btn-hover;
+        }
+      }
+      .upload,
+      .provider-settings,
+      .log {
+        // Come le LABEL di sezione del menu (li b): fondo label, testo bianco.
+        background: @label-btn-bg;
+        color: @label-btn-fg;
+        &:hover {
+          filter: brightness(1.15);
+          text-decoration: none;
         }
       }
       .help {
@@ -139,14 +147,9 @@
         }
       }
       .upload .icon {
-        stroke: @text;
+        stroke: @label-btn-fg;
       }
       .log {
-        background: @log-bg !important;
-        color: @log-fg !important;
-        &:hover {
-          background: @log-hover-bg !important;
-        }
         &.active {
           background: @log-active-bg !important;
           &:hover {
@@ -196,7 +199,7 @@
       color: @btn-hover-fg;
     }
   }
-  .input-context-actions,
+  .input-utility-actions,
   .input-actions {
     button {
       background-color: @btn-bg;
@@ -217,13 +220,8 @@
     }
   }
 
-  .input-actions {
-    #btn-action2-start-convo {
-      background: @dark-color3; // Giallo
-      &:hover {
-        background: lighten(@dark-color3, 10%);
-      }
-    }
+  .input-actions,
+  .input-utility-actions {
     #btn-action3-continue-convo {
       background: @dark-color2; // Verde
       &:hover {
@@ -232,7 +230,7 @@
     }
   }
 
-  .input-context-actions {
+  .input-utility-actions {
     .clear-input,
     #btn-copy-output {
       background-color: @btn-bg;
@@ -598,11 +596,6 @@
   @color1: @light-color1;
   @color2: @light-color2;
   @color3: @light-color3;
-
-  .provider-settings:hover {
-    background-color: fade(@light-color2, 40%) !important;
-    box-shadow: 0 0 8px fade(@light-color2, 50%);
-  }
 
   @border-shadow: @light-border-shadow;
   @btn-bg: @light-btn-bg;

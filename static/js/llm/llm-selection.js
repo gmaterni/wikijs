@@ -66,17 +66,6 @@ export const createLlmSelectionWindow = function(db, options) {
         const discoveredMap = _buildDiscoveredMap(state.discovered);
         const providers = _collectProviders(state.discovered);
 
-        // Diagnostica: logga stato per capire differenza menu vs Aggiorna LLM
-        console.log("llm-selection.show:", {
-            startUnselected,
-            discovered: state.discovered.length,
-            selected: state.selected.length,
-            providers: providers.length,
-            selectedIds: Array.from(selectedIds).slice(0,5)
-        });
-        try { UaLog.log("Seleziona LLM: discovered=" + state.discovered.length + " selected=" + state.selected.length + " providers=" + providers.length + " startUnselected=" + startUnselected); } catch(e){}
-        try { console.log("UaLog Seleziona LLM:", "discovered=" + state.discovered.length + " selected=" + state.selected.length); } catch(e){}
-
         const jfh = UaJtfh();
         jfh.append('<div class="window-info">');
         _appendHeader(jfh);
@@ -100,16 +89,6 @@ export const createLlmSelectionWindow = function(db, options) {
             _sizeWindow(winEl);
             _bindCheckboxEvents(winEl);
             _bindActionButtons(winEl, discoveredMap, selectedIds);
-            // Nessun auto-restore: se nessun valido è spuntato ma ci sono
-            // eletti, resta solo il log (la finestra mostra solo i validi).
-            if (selectedIds.size > 0) {
-                const anyChecked = winEl.querySelector(".llm-model-check:checked");
-                const totalChecks = winEl.querySelectorAll(".llm-model-check").length;
-                console.log("llm-selection post-render:", { totalChecks, anyChecked: !!anyChecked, selectedIdsSize: selectedIds.size });
-                if (!anyChecked && totalChecks > 0) {
-                    try { UaLog.log("Seleziona LLM: " + selectedIds.size + " eletti, 0 spuntati tra i validi"); } catch(e){}
-                }
-            }
         }
     };
 
@@ -193,7 +172,7 @@ export const createLlmSelectionWindow = function(db, options) {
         jfh.append("<button class=\"btn-danger\" data-help=\"" + ttCancel + "\" data-action=\"llm-reset\">Annulla</button>");
         jfh.append("<button class=\"btn-info\" data-help=\"" + ttRestore + "\" data-action=\"llm-restore\">Seleziona Attivi</button>");
         jfh.append('</span>');
-        jfh.append('<button class="btn-close" data-help="Chiudi" data-action="llm-close">X</button>');
+        jfh.append('<button class="btn-close" data-help="Chiudi|Chiude la selezione modelli." data-action="llm-close">X</button>');
         jfh.append('</div>');
     };
 
@@ -271,7 +250,7 @@ export const createLlmSelectionWindow = function(db, options) {
             jfh.append('<table class="table-data llm-select-table llm-select-head">');
             jfh.append(HEADER_COLS);
             jfh.append('<thead><tr>');
-            jfh.append('<th data-help="LLM">LLM</th>');
+            jfh.append('<th data-help="Modello|Nome del modello verificato.">LLM</th>');
             jfh.append('<th data-help="V|Voto (6-10): punteggio qualità basato su velocità e completezza risposta">V</th>');
             jfh.append('<th data-help="T|Tempo di risposta in secondi">T</th>');
             jfh.append('<th data-help="W|Dimensione finestra di contesto in migliaia di token (k)">W</th>');
@@ -485,7 +464,7 @@ export const createLlmSelectionWindow = function(db, options) {
         }
 
         UaWindowAdm.get(_windowId).close();
-        UaLog.log(">>> Selezione LLM salvata (sostituzione): " + count + " modelli. <<<");
+        UaLog.log("Selezione LLM salvata: " + count + " modelli.");
         await alert("Salvataggio completato: " + count + " modelli selezionati.");
     };
 
@@ -515,7 +494,7 @@ export const createLlmSelectionWindow = function(db, options) {
         }
 
         UaWindowAdm.get(_windowId).close();
-        UaLog.log(">>> Modelli aggiunti alla selezione LLM: " + selectedModels.length + ". <<<");
+        UaLog.log("Selezione LLM aggiornata: +" + selectedModels.length + " modelli.");
         await alert("Aggiunta completata: " + selectedModels.length + " modelli aggiunti all'albero.");
     };
 

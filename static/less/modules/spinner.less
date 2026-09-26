@@ -31,7 +31,7 @@
   box-sizing: border-box;
   position: fixed;
   top: 60vh;
-  left: calc(@menu-width + 20vw);
+  left: 2vw;
   width: auto;
   height: auto;
   z-index: @z-spinner;
@@ -96,7 +96,7 @@
   box-sizing: border-box;
   position: fixed;
   top: 60vh;
-  left: calc(@menu-width + 20vw);
+  left: 2vw;
   width: auto;
   height: auto;
   z-index: @z-spinner-wait;
@@ -153,6 +153,16 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     color: @spinner-text;
+  }
+}
+
+// Con menu aperto la finestra di STOP resta alla sua destra
+// (menu largo @menu-width = 20vw, UaLog a 40vw: mai coperti);
+// con menu chiuso torna sul bordo sinistro.
+body.menu-open {
+  .spinner,
+  .spinner-wait {
+    left: 22vw;
   }
 }
 

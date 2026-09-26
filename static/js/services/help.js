@@ -4,8 +4,8 @@
  * HTML per la finestra di aiuto con l'elenco dei comandi.
  *
  * @module  services/help
- * @version 1.0.0
- * @date    2026-09-15
+ * @version 1.1.0
+ * @date    2026-09-26
  */
 "use strict";
 
@@ -28,7 +28,7 @@ export const help0_html = `
             <strong>HELP</strong> <span>Apre questa finestra con l'elenco completo dei comandi.</span>
             <strong>Upload</strong> <span>Carica file PDF, DOCX o TXT nella Knowledge Base.</span>
             <strong>LLM</strong> <span>Sceglie il provider AI (Gemini, Mistral, OpenRouter, ecc.) e il modello.</span>
-            <strong>Log</strong> <span>Mostra la console tecnica con i messaggi di chunking, ricerca ed errori.</span>
+            <strong>Log</strong> <span>Mostra il registro tecnico con ricerca ed errori.</span>
             <strong>Tema</strong> <span>Alterna tra tema scuro e tema chiaro.</span>
         </div>
     </div>
@@ -38,10 +38,9 @@ export const help0_html = `
     <div>
         <strong class="help-section-title">Pulsanti di Controllo</strong>
         <div class="help-grid">
-            <strong>Cancella Input</strong> <span>Elimina il testo nella casella di input.</span>
-            <strong>Copia Output</strong> <span>Copia la risposta dell'AI negli appunti.</span>
-            <strong>Avvia (Giallo)</strong> <span>Cerca il contesto nei documenti (ricerca BM25 + giudizio semantico di pertinenza) e invia la prima domanda all'AI.</span>
-            <strong>Continua (Verde)</strong> <span>Invia una nuova domanda mantenendo chat e contesto.</span>
+            <strong>Cancella</strong> <span>Elimina il testo nella casella di input.</span>
+            <strong>Copia</strong> <span>Trasferisce la risposta negli appunti.</span>
+            <strong>Invia</strong> <span>Avvia la query sulla KB con risposta e fonti verificate.</span>
         </div>
     </div>
 
@@ -54,29 +53,27 @@ export const help0_html = `
             <strong>Cancella</strong> <span>Elimina la Knowledge Base attiva e i suoi indici.</span>
             <strong>Archivia</strong> <span>Salva la KB corrente con un nome personalizzato per usi futuri.</span>
             <strong>Gestisci</strong> <span>Elenca, attiva, esporta o elimina le KB archiviate.</span>
-            <strong>Carica</strong> <span>Carica una KB da un file di backup JSON.</span>
+            <strong>Ripristina</strong> <span>Attiva una KB da un file di backup salvato.</span>
         </div>
     </div>
 
     <div>
         <strong class="help-section-title">Menu Laterale &mdash; Conversazione</strong>
         <div class="help-grid">
-            <strong>Visualizza Contesto</strong> <span>Mostra il contenuto estratto usato dall'AI per rispondere.</span>
-            <strong>Visualizza Conversazione</strong> <span>Mostra l'intero storico della chat in formato testo.</span>
-            <strong>Cancella Contesto</strong> <span>Azzera contesto, prima domanda e tutta la conversazione.</span>
-            <strong>Cancella Conversazione</strong> <span>Elimina solo i messaggi successivi alla prima domanda.</span>
-            <strong>Archivia</strong> <span>Salva la cronologia della chat corrente con un nome personalizzato.</span>
-            <strong>Gestisci</strong> <span>Elenca, attiva, esporta o elimina le conversazioni archiviate.</span>
-            <strong>Carica</strong> <span>Carica una conversazione da un file di backup JSON.</span>
+            <strong>Visualizza</strong> <span>Mostra lo storico della chat in formato testo.</span>
+            <strong>Cancella</strong> <span>Elimina lo storico della chat e la vista corrente.</span>
+            <strong>Archivia</strong> <span>Salva la chat corrente con un nome personalizzato.</span>
+            <strong>Gestisci</strong> <span>Elenca, attiva, esporta o elimina le chat salvate.</span>
+            <strong>Ripristina</strong> <span>Attiva una conversazione da un file di backup.</span>
         </div>
     </div>
 
     <div>
         <strong class="help-section-title">Menu Laterale &mdash; Gestione Dati</strong>
         <div class="help-grid">
-            <strong>Elenco Documenti</strong> <span>Mostra i file caricati con opzioni di visualizzazione ed eliminazione.</span>
-            <strong>Riepilogo Dati</strong> <span>Mostra i dati IndexedDB raggruppati per categoria: KB attiva, conversazione, KB archiviate, conversazioni archiviate, configurazione.</span>
-            <strong>Reset</strong> <span>Cancella ogni dato: KB, contesto, conversazioni, documenti e chiavi.</span>
+            <strong>Elenco Documenti</strong> <span>Mostra i file caricati con anteprima ed eliminazione.</span>
+            <strong>Riepilogo Dati</strong> <span>Mostra KB, conversazione e archivi raggruppati per tipo.</span>
+            <strong>Reset</strong> <span>Cancella ogni dato: KB, conversazioni, documenti e chiavi.</span>
         </div>
     </div>
 
@@ -84,7 +81,7 @@ export const help0_html = `
         <strong class="help-section-title">Menu Laterale &mdash; API Key</strong>
         <div class="help-grid">
             <strong>API Keys Default</strong> <span>Ripristina le chiavi API predefinite.</span>
-            <strong>Gestisci API Key</strong> <span>Aggiungi, attiva o elimina le tue chiavi API personali.</span>
+            <strong>Gestisci API Key</strong> <span>Aggiungi, attiva o elimina le chiavi personali.</span>
         </div>
     </div>
 
@@ -94,8 +91,8 @@ export const help0_html = `
             <strong>Reset LLM</strong> <span>Ripristina la selezione ai modelli di default dai file locali.</span>
             <strong>Aggiorna LLM</strong> <span>Scopre i modelli dai provider con le tue chiavi, li testa con voto e apre la selezione.</span>
             <strong>Test LLM</strong> <span>Prova il prompt sui modelli selezionati del provider scelto, con riepilogo finale.</span>
-            <strong>Seleziona LLM</strong> <span>Mostra solo i modelli scaricati e testati: spunta, poi Salva (sostituisce) o Aggiungi (unisce).</span>
-            <strong>STOP</strong> <span>Durante elaborazioni e ricerche, clicca l'icona di attesa (STOP) per interrompere.</span>
+            <strong>Seleziona LLM</strong> <span>Mostra i modelli verificati per aggiornare l'albero.</span>
+            <strong>STOP</strong> <span>Interrompe build e query in corso.</span>
         </div>
     </div>
 

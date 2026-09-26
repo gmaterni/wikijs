@@ -4,8 +4,8 @@
  * per garantire consistenza e manutenibilità.
  *
  * @module  services/data_keys
- * @version 1.0.0
- * @date    2026-09-15
+ * @version 1.1.0
+ * @date    2026-09-26
  */
 "use strict";
 
@@ -90,12 +90,6 @@ export const DATA_KEYS = {
     PHASE1_INDEX: "ph1_index",
 
     /**
-     * Contesto conversazione
-     * Struttura: Stringa contenente testo contesto
-     */
-    PHASE2_CONTEXT: "ph2_context",
-
-    /**
      * Thread conversazione attiva
      * Struttura: Array di oggetti messaggio
      */
@@ -114,7 +108,7 @@ export const DATA_KEYS = {
 
     /**
      * Prefisso Conversazioni
-     * Struttura: { context, thread }
+     * Struttura: { thread }
      */
     KEY_CONVO_PRE: "rag_convo_",
 
@@ -155,7 +149,6 @@ export const REGEX_NAME_CLEANER = /[^a-z0-9]/gi;
 const KEY_DESCRIPTIONS = {
     [DATA_KEYS.PHASE0_CHUNKS]: "Knowledge Attiva (Chunks)",
     [DATA_KEYS.PHASE1_INDEX]: "Knowledge Attiva (Index)",
-    [DATA_KEYS.PHASE2_CONTEXT]: "Contesto & Conversazione Attiva",
     [DATA_KEYS.KEY_THREAD]: "Conversazione Attiva",
     [DATA_KEYS.KEY_PROVIDER]: "Configurazione Provider LLM",
     [DATA_KEYS.KEY_THEME]: "Tema UI (dark/light)",

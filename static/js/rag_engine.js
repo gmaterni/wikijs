@@ -2,13 +2,14 @@
  * rag_engine.js - Ponte tra la UI dell'applicazione e il motore WikiJS.
  *
  * Mantiene la stessa API che `app_ui.js` e `app_mgr.js` si aspettano
- * (`init`, `stop`, `getOptimizedContext`, `generateResponse`),
- * ma esegue la pipeline di query WikiJS (`kbQuery`, index-first con
- * citazioni verificate) e formatta le risposte in markdown per la chat.
+ * (`init`, `stop`, `ask`), esegue la pipeline di query WikiJS (`kbQuery`,
+ * index-first con citazioni verificate) e formatta la risposta markdown
+ * per la chat. Ogni domanda è una query indipendente: nessuno stato o
+ * esito delle domande precedenti è riusato.
  *
  * @module rag_engine
- * @version 2.0.0
- * @date 2026-09-25
+ * @version 2.1.0
+ * @date 2026-09-26
  * @author WikiJS
  */
 
@@ -26,9 +27,6 @@ let _controller = null;
 // Controller della build in corso (STOP durante la compilazione).
 let _buildController = null;
 
-// Ultimo risultato di query, per non rieseguirla nella stessa domanda.
-let _lastResult = null;
-
 // Modello attivo (solo diagnostica).
 let _activeModel = null;
 
@@ -44,35 +42,6 @@ const _cancelledError = function () {
     const error = new Error("Operazione interrotta dall'utente");
     error.code = CANCELLED_CODE;
     return error;
-};
-
-/**
- * Formatta il contesto leggibile dell'ultima query.
- *
- * @param {object} result - Risultato di `kbQuery`.
- * @returns {string} Testo del contesto.
- */
-const _formatContext = function (result) {
-    const lines = [];
-    const question = result.question || "";
-    lines.push("DOMANDA: " + question);
-    const pages = (result.pagesUsed || []).join(", ");
-    lines.push("PAGINE USATE: " + (pages || "nessuna"));
-    lines.push("CITAZIONI VERIFICATE:");
-    const citations = result.citations || [];
-    if (citations.length === 0) {
-        lines.push("- nessuna");
-    } else {
-        for (const citation of citations) {
-            const quote = citation.quote ? " — «" + citation.quote + "»" : "";
-            lines.push("- [[" + citation.slug + "]]" + quote);
-        }
-    }
-    const meta = result.meta || {};
-    const calls = typeof meta.calls === "number" ? meta.calls : 0;
-    lines.push("MODALITÀ: " + (result.mode || "") + " · CHIAMATE: " + String(calls) + " · PAGINE CONSIDERATE: " + String(meta.pagesConsidered || 0));
-    const text = lines.join("\n");
-    return text;
 };
 
 /**
@@ -104,7 +73,7 @@ const _formatAnswer = function (result) {
  * Esegue la query WikiJS sulla KB attiva.
  *
  * @param {string} question - Domanda dell'utente.
- * @returns {Promise<object>} Risultato di `kbQuery`.
+ * @returns {Promise<object>} Risultato di `kbQuery`, arricchito con la domanda.
  */
 const _queryAsync = async function (question) {
     if (typeof question !== "string" || question.trim().length === 0) {
@@ -122,32 +91,13 @@ const _queryAsync = async function (question) {
         throw failed;
     }
     const enriched = Object.assign({}, result, { question: question.trim() });
-    _lastResult = { question: question.trim(), result: enriched };
     return enriched;
-};
-
-/**
- * Ultimo messaggio dell'utente nello storico.
- *
- * @param {Array} thread - Messaggi `{ role, content }`.
- * @returns {string} Contenuto, o stringa vuota.
- */
-const _lastUserMessage = function (thread) {
-    const messages = Array.isArray(thread) ? thread : [];
-    for (let i = messages.length - 1; i >= 0; i--) {
-        if (messages[i] && messages[i].role === "user") {
-            const content = String(messages[i].content || "");
-            return content;
-        }
-    }
-    const empty = "";
-    return empty;
 };
 
 export const ragEngine = {
 
     /**
-     * Memorizza il contesto di esecuzione (compatibilità applicativa).
+     * Memorizza lo stato di esecuzione (compatibilità applicativa).
      *
      * @param {object} client - Client LLM attivo.
      * @param {string} model - Modello attivo.
@@ -208,37 +158,18 @@ export const ragEngine = {
     },
 
     /**
-     * Prepara il contesto per la domanda: esegue la query WikiJS.
+     * Esegue una query indipendente e restituisce la risposta markdown.
      *
-     * @param {string} query - Domanda dell'utente.
-     * @param {object} kbData - Dati KB (compatibilità; non usati).
-     * @param {Array} thread - Storico della conversazione.
-     * @returns {Promise<string>} Contesto leggibile da mostrare e salvare.
+     * Ogni domanda esegue una sola `kbQuery` completa (Q0-Q4): nessuna
+     * distinzione tra prima domanda e successive, nessun riuso di esiti o
+     * di cache tra domande diverse.
+     *
+     * @param {string} question - Domanda dell'utente.
+     * @returns {Promise<string>} Markdown della risposta (fonti verificate
+     * + riga di provenienza).
      */
-    getOptimizedContext: async function (query, kbData, thread) {
-        const result = await _queryAsync(query);
-        const context = _formatContext(result);
-        return context;
-    },
-
-    /**
-     * Produce la risposta dell'assistente.
-     *
-     * Usa il risultato già ottenuto per la stessa domanda; altrimenti
-     * esegue la query (prosecuzione della conversazione).
-     *
-     * @param {string} context - Contesto salvato (compatibilità).
-     * @param {Array} thread - Storico della conversazione.
-     * @returns {Promise<string>} Markdown della risposta.
-     */
-    generateResponse: async function (context, thread) {
-        const question = _lastUserMessage(thread);
-        let result = null;
-        if (_lastResult && _lastResult.question === question) {
-            result = _lastResult.result;
-        } else {
-            result = await _queryAsync(question);
-        }
+    ask: async function (question) {
+        const result = await _queryAsync(question);
         const answer = _formatAnswer(result);
         return answer;
     }

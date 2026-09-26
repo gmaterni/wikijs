@@ -39,8 +39,8 @@ export const UaLog = {
       this.wind.drag();
     }
     const h = `
-    <button type="button" class="clear">Clear</button>
-    <button type="button" class="close" data-help="Chiudi">Close</button>
+    <button type="button" class="clear" data-help="Pulisci|Svuota il registro eventi.">Clear</button>
+    <button type="button" class="close" data-help="Chiudi|Chiude la finestra del registro.">Close</button>
     <pre id="ualogmsg_"></pre>`;
     this.wind.setHtml(h);
     document.getElementById("wnd-ualog").addEventListener("click", (e) => {

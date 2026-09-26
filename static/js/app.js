@@ -34,11 +34,16 @@ export const APP_VERSION = "0.1.0";
 /** @type {string} URL del worker per l'invio eventi. */
 const WORKER_URL = "https://wwwanalyzer-backend.workerua.workers.dev";
 
-// Disabilitazione log non necessari
-// Scommentare la riga qui sotto per silenziare console.debug
+// Convenzione console unica:
+// - console.debug = request/response leggibili (dev, JSON formattato nei client LLM)
+// - console.info = ciclo di vita (avvio, build, query, completamenti)
+// - console.warn / console.error = anomalie, sempre con prefisso funzione
+// Blocco unico di attivazione via commenti: scommentare per silenziare i livelli dev.
+// console.error resta sempre attivo. Commentando le righe qui sotto i log dev tornano attivi.
 // console.debug = () => { };
 // console.info = () => { };
 // console.warn = () => { };
+// console.log = () => { };
 
 
 // ============================================================================

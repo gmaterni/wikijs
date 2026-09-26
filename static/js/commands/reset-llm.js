@@ -71,7 +71,7 @@ export const runReset = async function() {
     updateActiveModelDisplay();
     refreshProviderTree();
 
-    const msg = ">>> Reset LLM: albero ricostruito con modelli di default. <<<";
+    const msg = "Reset LLM: albero ricostruito con modelli di default.";
     UaLog.log(msg);
 
     const restored = defaultModels.length;

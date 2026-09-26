@@ -295,7 +295,7 @@ export const BackupMgr = {
             }
 
             // Fail Fast: Validazione struttura Conversazione
-            // Supportiamo sia il formato con contesto che il thread semplice
+            // Supportiamo sia il thread annidato sia il thread semplice
             const thread = data.thread || data;
             if (!Array.isArray(thread)) {
                 await alert("Errore: Il file selezionato non è una conversazione valida.");

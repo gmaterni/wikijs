@@ -19,7 +19,7 @@ export const documentUploader = {
     const htmlContent = `
       <div class="window-text">
         <div class="btn-wrapper">
-         <button class="btn-close" data-help="Chiudi">X</button>
+         <button class="btn-close" data-help="Chiudi|Chiude la finestra di caricamento.">X</button>
         </div>
         <div class="upload-dialog-content">
           <p class="upload-description">Trascina uno o più file (testo, PDF, DOCX, ODT) o un'intera cartella per aggiungerli alla knowledge base.</p>

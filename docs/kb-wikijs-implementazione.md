@@ -150,8 +150,7 @@ Priorità: `window.WikiJsLlm.complete` (ospite) → `llm_provider_adapter` → n
 | `rag_engine.js` | `init(client, model, promptSize)` | no-op diagnostico (compatibilità) |
 | | `setStopHandler(handler)` | registra la cancellazione dei client LLM (composition root) |
 | | `stop()` | abort della query/build in corso + `handler()` |
-| | `getOptimizedContext(query, kbData, thread)` | esegue `kbQuery`, ritorna il **contesto testuale** (per `ph2_context`) |
-| | `generateResponse(context, thread)` | ritorna markdown: risposta + `**Fonti verificate**` + provenienza |
+| | `ask(question)` | esegue `kbQuery` una volta e ritorna il markdown: risposta + `**Fonti verificate**` + riga di provenienza |
 | `llm_provider_adapter.js` | `activateProviderAdapter()` | registra host o provider; `boolean` |
 | | `getProviderAdapter()` | `{ complete }` |
 | | `stopActiveClients()` | `cancelRequest()` su tutti i client attivi |
@@ -177,7 +176,7 @@ Priorità: `window.WikiJsLlm.complete` (ospite) → `llm_provider_adapter` → n
 
 | Store | Chiavi usate dal motore/UI |
 |---|---|
-| `kvStore` | `thread`, `ph2_context`, `ph0_chunks`, `ph1_index`, `kb_doclist`, `kb_childchunks`, `rag_kb_<nome>`, `rag_convo_<nome>` |
+| `kvStore` | `thread`, `ph0_chunks`, `ph1_index`, `kb_doclist`, `kb_childchunks`, `rag_kb_<nome>`, `rag_convo_<nome>` |
 | `settings` | `active_kb`, `theme`, `provider`, `api_keys` |
 
 ### 5.3 Marcatori UI (compatibilità con i controlli di `app_ui.js`)
@@ -185,7 +184,7 @@ Priorità: `window.WikiJsLlm.complete` (ospite) → `llm_provider_adapter` → n
 | Chiave | Valore scritto | Letto da |
 |---|---|---|
 | `ph0_chunks` | `{ builder:"wikijs", kbId, pages, sources, builtAt }` | `updateActiveKbDisplay`, `_actionSaveKnowledgeBaseAsync` |
-| `ph1_index` | `"wikijs:<kbId>"` | `TextInput.startConversationAsync` |
+| `ph1_index` | `"wikijs:<kbId>"` | `TextInput.sendQuestionAsync` |
 | `kb_doclist` | nomi sorgenti elaborate | `createKnowledgeAsync`, Documenti Processati |
 | `kb_childchunks` | `{}` (segnaposto) | `_actionSaveKnowledgeBaseAsync` |
 | `active_kb` | `kbId` corrente | `updateActiveKbDisplay` |
@@ -227,20 +226,18 @@ modello, default 12.000) con overlap 1/8 come sezione «CONTESTO PRECEDENTE
 con schema bloccante + 1 retry; merge per aggiunta; citazioni verificate
 per sottostringa; job riprendibili con `staging`.
 
-### 6.3 Interrogazione (Avvia / Continua / Invio)
+### 6.3 Interrogazione (Invia / Invio)
 
 ```
+guardia: kbStatus({kbId}).counts.pages > 0   → altrimenti «Compilare prima la Knowledge Base»
 thread = idbMgr.read("thread") || []
-ragEngine.getOptimizedContext(query, kbData, thread)
+ragEngine.ask(question)
   → kbQuery({ kbId, question, mode:"llm" })
-  → { answer, citations[verified], pagesUsed, mode, meta }
-  → contesto testuale salvato in ph2_context
-ragEngine.generateResponse(context, thread)
   → markdown: answer + **Fonti verificate** + *Modalità · Pagine · Chiamate*
   → thread.push(user, assistant) → idbMgr.create("thread") → showHtmlThread()
 ```
 
-- «Visualizza Contesto» legge `ph2_context` (testo già leggibile).
+- Ogni invio è una query indipendente: nessun riuso di stato o esiti tra domande; `thread` è solo storico UI.
 - Citazioni non verificate mai mostrate: filtro a monte in `kbQuery`.
 - Modi: `llm` (≤2 chiamate), `llm-min` (1), `offline` (0).
 
@@ -279,9 +276,8 @@ Tutte in `js/app_ui.js` salvo dove indicato. Sono l'**unico** punto di contatto.
 | P2 | `_actionSaveKnowledgeBaseAsync` | usa `kbExport` e salva `kbBundle` nel record `rag_kb_*` |
 | P3 | `_actionLoadKnowledgeBaseAsync` | `kbImport(mode:"replace")` + `syncKbMarkers` |
 | P4 | `_actionDeleteKnowledgeBaseAsync` | `deleteKbDatabase` + `clearKbMarkers` |
-| P5 | `TextOutput.clearHistoryAndContextAsync` | come P4 (cancella anche il DB KB) |
 | P6 | `Commands.resetAll` | elimina anche i database `wikijs:*` |
-| P7 | `TextInput.startConversationAsync` | messaggio «Eseguire l'Azione 1 prima.» → «Compilare prima la Knowledge Base» |
+| P7 | `TextInput.sendQuestionAsync` | messaggio «Eseguire l'Azione 1 prima.» → «Compilare prima la Knowledge Base»; guardia su `kbStatus` |
 | P8 | `services/backup_mgr.js` | `importKbAsync` accetta anche `bundle`/`kbBundle`; nome file `wikijs_*` |
 | P9 | `js/app.js` | dopo `AppMgr.initApp()`: `activateProviderAdapter()` + `ragEngine.setStopHandler(stopActiveClients)`; espone `window.kb*` |
 | P10 | `services/db_instance.js`, `js/llm/llm-db.js` | rinomina DB in `wikijs_app_<userId>` / `wikijs_llm_<userId>` (isolamento) |
@@ -324,7 +320,7 @@ Il motore mantiene I1–I10 (`kbStatus().invariants`):
 
 ## 9. Limiti e rischi
 
-- **Cancella Contesto/Conversazione** restano stato UI: `outputs`/`logs` sono
+- **Cancella Conversazione** resta stato UI: `outputs`/`logs` sono
   append-only (I6) e non si cancellano.
 - Un solo `kbId` attivo per volta: la multi-KB si gestisce con Archivia/Carica
   (bundle JSON), non con più DB attivi contemporaneamente.

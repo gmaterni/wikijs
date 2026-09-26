@@ -69,6 +69,19 @@ textarea,
       min-height: 4vh;
       max-height: 4vh;
     }
+    // Task 1.1: header Upload/LLM/Log come le LABEL di sezione del menu (li b).
+    .upload,
+    .provider-settings,
+    .log {
+      .menu-section-label();
+      border: none;
+      cursor: pointer;
+      min-height: 4vh;
+      max-height: 4vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .help {
       left: 1vw;
       font-size: @fsize-out;
@@ -139,11 +152,6 @@ textarea,
     }
     .provider-settings {
       left: 46vw;
-      transition: background-color 0.3s ease;
-      &:hover {
-        background-color: fade(@dark-color2, 40%) !important;
-        box-shadow: 0 0 8px fade(@dark-color2, 50%);
-      }
     }
     .active-model-display {
       left: 51vw;
@@ -203,36 +211,65 @@ textarea,
 .item.item2 {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: flex-start;
   position: relative;
   z-index: @z-item2;
 }
 
-.input-context-actions {
+.input-utility-actions {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   margin: 0 0.5vw;
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 100%;
 
+  // Il primo comando (Invia) resta in linea con il bordo superiore
+  // della finestra di input: nessun margine sopra di esso.
+  > :first-child {
+    margin-top: 0;
+  }
+
+  // I tre comandi entrano nell'altezza utile della riga input
+  // (16vh - padding 0.5vh = 15.5vh):
+  // 3.4 + 4.2 + 4.2 = 11.8vh di pulsanti, i restanti ~3.7vh
+  // diventano i due spazi tramite space-between. Unità in vh:
+  // scala con la viewport, mai overflow, tutti e tre visibili.
   #btn-edit-last-fixed,
   .clear-input,
-  #btn-copy-output {
+  #btn-copy-output,
+  #btn-action3-continue-convo {
     box-sizing: border-box;
     border: none;
-    padding: 12px;
+    padding: 0;
     cursor: pointer;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 4.2vh;
+    height: 4.2vh;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 12px;
+    margin-top: 0;
     transition: all 0.3s ease;
-
     .icon {
-      width: 28px;
-      height: 28px;
+      width: 60%;
+      height: 60%;
     }
+    .btn-icon-svg {
+      width: 60%;
+      height: 60%;
+      margin-right: 0;
+    }
+  }
+
+  // Pulsante di invio più piccolo degli altri due: resta separato e
+  // distinto in colonna (Invia, Copia, Cancella).
+  #btn-action3-continue-convo {
+    width: 3.4vh;
+    height: 3.4vh;
   }
 }
 

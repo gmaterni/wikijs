@@ -5,8 +5,8 @@
  * il sistema di comandi e l'aggiornamento dinamico della UI.
  *
  * @module  app_ui
- * @version 1.1.3
- * @date    2026-05-01
+ * @version 1.2.0
+ * @date    2026-09-26
  * @author  Gemini CLI
  */
 
@@ -28,7 +28,7 @@ import { getKbId, syncKbMarkers, clearKbMarkers, deleteKbDatabase } from "./kb_u
 import { DATA_KEYS, getDescriptionForKey, REGEX_NAME_CLEANER } from "./services/data_keys.js";
 import { idbMgr } from "./services/idb_mgr.js";
 import { BackupMgr } from "./services/backup_mgr.js";
-import { addApiKey, restoreDefaultApiKeys, getApiKey } from "./services/key_retriever.js";
+import { addApiKey, restoreDefaultApiKeys } from "./services/key_retriever.js";
 import { UaSender } from "./services/sender.js";
 import { WebId } from "./services/webuser_id.js";
 import { createLlmSelectionWindow } from "./llm/llm-selection.js";
@@ -334,14 +334,14 @@ const _UaWindowFactory = function(id, contentClass, copyMethodName, showCopy = t
         _win.vw_vh().setXY(xPos, 6, 1);
 
         const copyBtnHtml = showCopy ? `
-                    <button class="btn-copy wcp" data-help="Copia" onclick="wnds.${copyMethodName}.copy()">
+                    <button class="btn-copy wcp" data-help="Copia|Trasferisce il contenuto negli appunti." onclick="wnds.${copyMethodName}.copy()">
                         <svg class="icon copy-icon" viewBox="0 0 24 24">
                             <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path>
                         </svg>
                     </button>
-                    <button class="btn-close wcl" data-help="Chiudi" onclick="wnds.${copyMethodName}.close()">X</button>
+                    <button class="btn-close wcl" data-help="Chiudi|Chiude la finestra corrente." onclick="wnds.${copyMethodName}.close()">X</button>
                     ` : `
-                    <button class="btn-copy wcl" data-help="Chiudi" onclick="wnds.${copyMethodName}.close()">
+                    <button class="btn-copy wcl" data-help="Chiudi|Chiude la finestra corrente." onclick="wnds.${copyMethodName}.close()">
                         <svg class="icon close-icon-yellow" viewBox="0 0 24 24">
                             <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
                         </svg>
@@ -390,7 +390,7 @@ const _UaWindowInfoFactory = function(id) {
         const html = `
             <div class="window-info">
                 <div class="btn-wrapper">
-                    <button class="btn-close" data-help="Chiudi" onclick="wnds.winfo.close()">X</button>
+                    <button class="btn-close" data-help="Chiudi|Chiude la finestra corrente." onclick="wnds.winfo.close()">X</button>
                 </div>
                 <div class="div-info">${innerContent}</div>
             </div>
@@ -663,19 +663,19 @@ const _bindHelpPopups = function() {
 
     HelpPopup.bindDynamic("btn-theme-toggle", function() {
         const isLight = document.body.classList.contains("theme-light");
-        const label = isLight ? "Tema Scuro" : "Tema Chiaro";
-        return label;
+        const text = isLight ? "Tema Scuro|Passa ai colori scuri." : "Tema Chiaro|Passa ai colori chiari.";
+        return text;
     });
     HelpPopup.bindDynamic("id_log", function() {
-        const desc = UaLog.active ? "Nasconde il registro eventi." : "Mostra i messaggi di log dell'applicazione in tempo reale.";
+        const desc = UaLog.active ? "Nasconde il registro eventi." : "Mostra il registro eventi in tempo reale.";
         const text = `Registro Eventi|${desc}`;
         return text;
     });
     HelpPopup.bindDynamic("id-menu-icon-label", function() {
         const menuBtn = document.getElementById("id-menu-btn");
         const isOpen = menuBtn && menuBtn.checked;
-        const label = isOpen ? "Close" : "Open";
-        return label;
+        const text = isOpen ? "Chiudi|Nasconde il menu laterale." : "Apri|Mostra il menu laterale.";
+        return text;
     });
 };
 
@@ -728,12 +728,6 @@ const _actionViewConversationAsync = async function() {
     wnds.wpre.show(messages2text(thread));
 };
 
-const _actionViewContextAsync = async function() {
-    const context = await idbMgr.read(DATA_KEYS.PHASE2_CONTEXT);
-    if (!context) { await alert("Nessun contesto disponibile."); return; }
-    wnds.wpre.show(context);
-};
-
 const _actionSaveKnowledgeBaseAsync = async function() {
     const hasChunks = await idbMgr.exists(DATA_KEYS.PHASE0_CHUNKS);
     const hasIndex = await idbMgr.exists(DATA_KEYS.PHASE1_INDEX);
@@ -776,41 +770,27 @@ const _actionDeleteKnowledgeBaseAsync = async function() {
     await deleteKbDatabase(kbId);
     await clearKbMarkers();
     await updateActiveKbDisplay();
-    UaLog.log(">>> Knowledge Base cancellata. <<<");
+    UaLog.log("Knowledge Base cancellata.");
 };
 
-const _actionClearContextAsync = async function() {
-    const hasContext = await idbMgr.exists(DATA_KEYS.PHASE2_CONTEXT);
-    const hasThread = await idbMgr.exists(DATA_KEYS.KEY_THREAD);
-    if (!hasContext && !hasThread) { await alert("Nessun contesto e nessuna conversazione da cancellare."); return; }
-    if (!await confirm("Cancellare contesto e l'intera conversazione (prima domanda inclusa)?")) return;
-    await idbMgr.delete(DATA_KEYS.PHASE2_CONTEXT);
-    await idbMgr.delete(DATA_KEYS.KEY_THREAD);
-    _setResponseHtml("");
-    UaLog.log(">>> Contesto e conversazione cancellati. <<<");
-};
-
-const _actionClearConversazioneAsync = async function() {
+/**
+ * Cancella l'intero storico della chat e la vista.
+ *
+ * Lo storico è solo presentazione UI: non alimenta le domande successive,
+ * che rieseguono sempre la selezione dal catalog.
+ *
+ * @returns {Promise<void>} Al termine.
+ */
+const _actionClearConversationAsync = async function() {
     const thread = await idbMgr.read(DATA_KEYS.KEY_THREAD);
     if (!thread || thread.length === 0) { await alert("Nessuna conversazione da cancellare."); return; }
-    const hasContext = await idbMgr.exists(DATA_KEYS.PHASE2_CONTEXT);
-    if (!hasContext) {
-        if (!await confirm("Cancellare l'intera conversazione? (nessun contesto presente)")) return;
-        await idbMgr.delete(DATA_KEYS.KEY_THREAD);
-        _setResponseHtml("");
-        UaLog.log(">>> Conversazione cancellata. <<<");
-        return;
-    }
-    if (thread.length < 2) { await alert("Nessuna conversazione successiva da cancellare."); return; }
-    if (!await confirm("Cancellare solo i messaggi successivi alla prima domanda? (contesto e prima domanda restano)")) return;
-    const firstMessage = thread[0];
-    await idbMgr.create(DATA_KEYS.KEY_THREAD, [firstMessage]);
-    await showHtmlThread();
-    UaLog.log(">>> Messaggi successivi alla prima domanda cancellati. <<<");
+    if (!await confirm("Cancellare l'intera conversazione?")) return;
+    await idbMgr.delete(DATA_KEYS.KEY_THREAD);
+    _setResponseHtml("");
+    UaLog.log("Conversazione cancellata.");
 };
 
 const _actionSaveConversationAsync = async function() {
-    const context = await idbMgr.read(DATA_KEYS.PHASE2_CONTEXT);
     const thread = await idbMgr.read(DATA_KEYS.KEY_THREAD);
     if (!thread || thread.length === 0) { await alert("Nessuna conversazione attiva."); return; }
 
@@ -821,7 +801,7 @@ const _actionSaveConversationAsync = async function() {
 
     const sanitizedName = nameTrimmed.replace(REGEX_NAME_CLEANER, "_").replace(/_+/g, "_");
     const storageKey = `${DATA_KEYS.KEY_CONVO_PRE}${sanitizedName}`;
-    await idbMgr.create(storageKey, { context, thread });
+    await idbMgr.create(storageKey, { thread });
     await alert(`Conversazione archiviata con successo: ${sanitizedName}`);
 };
 
@@ -854,11 +834,19 @@ const _actionLoadKnowledgeBaseAsync = async function(key) {
     await alert("Knowledge Base caricata correttamente.");
 };
 
+/**
+ * Carica una conversazione archiviata come solo storico UI.
+ *
+ * Lettura tollerante dei vecchi archivi `{ context, thread }`: il campo
+ * `context` è ignorato, si usa solo `thread`.
+ *
+ * @param {string} key - Chiave dell'archivio conversazione.
+ * @returns {Promise<void>} Al termine.
+ */
 const _actionLoadConversationAsync = async function(key) {
     if (!key) return;
     const data = await idbMgr.read(key);
     if (data && data.thread) {
-        await idbMgr.create(DATA_KEYS.PHASE2_CONTEXT, data.context || "");
         await idbMgr.create(DATA_KEYS.KEY_THREAD, data.thread);
         await alert("Conversazione caricata correttamente.");
         await showHtmlThread();
@@ -1004,7 +992,7 @@ export const Commands = {
     },
     providerSettings: function() { toggleProviderTree(); },
     resetAll: async function() {
-        const msg1 = "Primo avviso: sta per eseguire un RESET TOTALE dell'applicazione.\n\nVerranno cancellati TUTTI i dati: Knowledge Base, contesto, conversazioni, documenti, chiavi API e configurazione provider.\n\nConfermi?";
+        const msg1 = "Primo avviso: sta per eseguire un RESET TOTALE dell'applicazione.\n\nVerranno cancellati TUTTI i dati: Knowledge Base, conversazioni, documenti, chiavi API e configurazione provider.\n\nConfermi?";
         if (!await confirm(msg1)) return;
         const msg2 = "SECONDO AVVISO: conferma definitiva.\n\nTutti i dati verranno persi. L'applicazione tornerà allo stato iniziale.\n\nProcedere?";
         if (!await confirm(msg2)) return;
@@ -1044,7 +1032,9 @@ const _collectValidDocumentsAsync = async function() {
 const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
     const isFirstBuild = existingDoclist.length === 0;
     if (isFirstBuild) {
-        const question = `Creare KB da ${validDocs.length} documenti?`;
+        const processed = existingDoclist.length;
+        const toProcess = validDocs.length;
+        const question = `Creare KB? ${processed} già processati, ${toProcess} da processare. Procedere?`;
         const confirmed = await confirm(question);
         return confirmed;
     }
@@ -1058,7 +1048,7 @@ const _confirmKnowledgeBuildAsync = async function(validDocs, existingDoclist) {
         return blocked;
     }
     const processedCount = existingDoclist.length;
-    const question = `Aggiungere ${pendingCount} nuovo/i documento/i alla KB esistente (${processedCount} doc processati)?`;
+    const question = `Aggiornare KB? ${processedCount} già processati, ${pendingCount} da processare. Procedere?`;
     const confirmed = await confirm(question);
     return confirmed;
 };
@@ -1131,14 +1121,14 @@ const _runKnowledgeBuildAsync = async function(isFirstBuild) {
             const reason = report.error === "rate_limited" ? "quota LLM esaurita" : "budget LLM esaurito";
             UaLog.log("Compilazione interrotta: " + reason + ".");
             for (const note of report.notes) {
-                UaLog.log("KB: " + note);
+                UaLog.log(note);
             }
             await _syncKnowledgeMarkersAsync(kbId);
             await alert("Compilazione interrotta: " + reason + ".\nLe pagine già create sono salvate; riprovare più tardi o cambiare modello/provider.");
             return;
         }
         for (const note of report.notes) {
-            UaLog.log("KB: " + note);
+            UaLog.log(note);
         }
         const pages = await _syncKnowledgeMarkersAsync(kbId);
         const totalsLine = "Compilazione completata: " + String(report.totals.sources) + " sorgenti, " + String(report.totals.pagesCreated) + " pagine create, " + String(report.totals.pagesUpdated) + " aggiornate, " + String(report.totals.calls) + " chiamate LLM.";
@@ -1175,7 +1165,7 @@ export const TextInput = {
     handleEnter: function(event) {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            TextInput.continueConversationAsync();
+            TextInput.sendQuestionAsync();
         }
     },
     clear: function() {
@@ -1197,71 +1187,33 @@ export const TextInput = {
             await _runKnowledgeBuildAsync(isFirstBuild);
         }, DEFERRED_START_MS);
     },
-    _checkProviderReady: async function() {
-        const config = LlmProvider.getConfig();
-        if (!config || !config.provider) {
-            await alert("Nessun provider configurato. Selezionare un provider LLM.");
-            const ready = false;
-            return ready;
-        }
-        const provider = config.provider;
-        const apiKey = await getApiKey(provider);
-        if (!apiKey) {
-            await alert(`API key mancante per il provider "${provider}".\nAggiungere una chiave valida in Gestisci API Key.`);
-            const ready = false;
-            return ready;
-        }
-        const ready = true;
-        return ready;
-    },
-    startConversationAsync: async function() {
+    /**
+     * Invia una domanda con il flusso unico dell'applicazione.
+     *
+     * Ogni invio esegue una query indipendente: nessun riuso di stato o di
+     * esito delle domande precedenti e nessuna distinzione tra prima domanda
+     * e successive. Lo storico `thread` è solo presentazione UI.
+     *
+     * @returns {Promise<void>} Al termine dell'invio (query differita).
+     */
+    sendQuestionAsync: async function() {
         if (!TextInput._inputEl) return;
-        const query = TextInput._inputEl.value.trim();
-        if (query.length === 0) { await alert("Inserisci una domanda."); return; }
-        const index = await idbMgr.read(DATA_KEYS.PHASE1_INDEX);
-        const chunks = await idbMgr.read(DATA_KEYS.PHASE0_CHUNKS);
-        if (!index) { await alert("Compilare prima la Knowledge Base"); return; }
+        const question = TextInput._inputEl.value.trim();
+        if (question.length === 0) { await alert("Inserisci una domanda."); return; }
+
+        const kbId = await getKbId();
+        const status = await kbStatus({ kbId: kbId });
+        const pagesCount = status && status.counts ? status.counts.pages : 0;
+        if (pagesCount === 0) { await alert("Compilare prima la Knowledge Base"); return; }
 
         _Spinner.show();
         await UaSender.sendEventAsync("wikijs", "startConversation");
         setTimeout(async function() {
             try {
-                await idbMgr.delete(DATA_KEYS.KEY_THREAD);
-                const kbData = { index, chunks };
-                const thread = [{ role: "user", content: query }];
-                await AppMgr.initConfig();
-                if (!await TextInput._checkProviderReady()) { _Spinner.hide(); return; }
-                const context = await ragEngine.getOptimizedContext(query, kbData, thread);
-                await idbMgr.create(DATA_KEYS.PHASE2_CONTEXT, context);
-                const answer = await ragEngine.generateResponse(context, thread);
-                thread.push({ role: "assistant", content: answer });
-                await idbMgr.create(DATA_KEYS.KEY_THREAD, thread);
-                await showHtmlThread();
-                TextInput.clear();
-            } catch (error) {
-                if (error && error.code === 499) return;
-                const errCode = error.code ? `[${error.code}] ` : "";
-                const errorText = error.message || error;
-                await alert(`ERRORE CRITICO:\n${errCode}${errorText}`);
-            } finally { _Spinner.hide(); }
-        }, DEFERRED_START_MS);
-    },
-    continueConversationAsync: async function() {
-        if (!TextInput._inputEl) return;
-        const query = TextInput._inputEl.value.trim();
-        if (query.length === 0) { await alert("Inserisci una domanda."); return; }
-
-        _Spinner.show();
-        setTimeout(async function() {
-            try {
                 const thread = await idbMgr.read(DATA_KEYS.KEY_THREAD) || [];
-                const context = await idbMgr.read(DATA_KEYS.PHASE2_CONTEXT) || "";
-
-                thread.push({ role: "user", content: query });
+                thread.push({ role: "user", content: question });
                 await AppMgr.initConfig();
-                if (!await TextInput._checkProviderReady()) { _Spinner.hide(); return; }
-
-                const answer = await ragEngine.generateResponse(context, thread);
+                const answer = await ragEngine.ask(question);
                 thread.push({ role: "assistant", content: answer });
                 await idbMgr.create(DATA_KEYS.KEY_THREAD, thread);
                 await showHtmlThread();
@@ -1297,22 +1249,6 @@ export const TextOutput = {
         if (await confirm("Vuoi iniziare una nuova conversazione?")) {
             await idbMgr.delete(DATA_KEYS.KEY_THREAD);
             _setResponseHtml("");
-        }
-    },
-    clearHistoryAndContextAsync: async function() {
-        if (await confirm("Vuoi resettare COMPLETAMENTE l'applicazione? (Verranno cancellati: Chat, Contesto e Knowledge Base attiva)")) {
-            // Cancella Contesto e Conversazione
-            await idbMgr.delete(DATA_KEYS.PHASE2_CONTEXT);
-            await idbMgr.delete(DATA_KEYS.KEY_THREAD);
-            
-            // Cancella la Knowledge Base attiva: database dedicato + marcatori UI
-            const kbId = await getKbId();
-            await deleteKbDatabase(kbId);
-            await clearKbMarkers();
-
-            await updateActiveKbDisplay();
-            _setResponseHtml("");
-            UaLog.log(">>> Reset Totale completato: sistema riportato allo stato iniziale. <<<");
         }
     }
 };
@@ -1409,7 +1345,7 @@ const _buildProviderTreeHtml = function() {
 
     jfh.append('<div class="provider-tree-header">')
        .append('  <span>Seleziona Modello</span>')
-       .append('  <button class="provider-tree-close-btn" data-help="Chiudi">&times;</button>')
+       .append('  <button class="provider-tree-close-btn" data-help="Chiudi|Chiude la selezione modelli.">&times;</button>')
        .append('</div>')
        .append('<ul class="provider-tree">');
 
@@ -1679,7 +1615,7 @@ const _actionLlmUpdateAsync = async function() {
         const selectedCount = selected ? selected.length : 0;
         const discoveredCount = discoveredList ? discoveredList.length : 0;
         const doneMsg = "Aggiorna LLM: completato - selected=" + selectedCount + " discovered=" + discoveredCount;
-        console.log(doneMsg);
+        console.info("_actionLlmUpdateAsync: " + doneMsg);
         UaLog.log(doneMsg);
 
         // Apertura automatica unica finestra elenco con spunta su eletti
@@ -1751,9 +1687,7 @@ export const bindEventListener = function() {
         },
         "menu-processed-docs": _actionShowProcessedDocs,
         "menu-view-convo": _actionViewConversationAsync,
-        "menu-view-context": _actionViewContextAsync,
-        "menu-clear-context": _actionClearContextAsync,
-        "menu-clear-conversazione": _actionClearConversazioneAsync,
+        "menu-clear-conversazione": _actionClearConversationAsync,
         "menu-save-convo": _actionSaveConversationAsync,
         "menu-restore-convo": async function() { 
             const n = await BackupMgr.importConvoAsync(); 
@@ -1773,8 +1707,7 @@ export const bindEventListener = function() {
         "menu-logout": _actionLogout,
         "menu-create-kb": TextInput.createKnowledgeAsync,
         "menu-delete-kb": _actionDeleteKnowledgeBaseAsync,
-        "btn-action2-start-convo": TextInput.startConversationAsync,
-        "btn-action3-continue-convo": TextInput.continueConversationAsync,
+        "btn-action3-continue-convo": TextInput.sendQuestionAsync,
         "btn-copy-output": TextOutput.copyAsync
     };
 
@@ -1800,7 +1733,7 @@ export const bindEventListener = function() {
             if (keys.length > 0) {
                 jfh.append('<div class="docs-header">');
                 jfh.append('<label><input type="checkbox" onclick="document.querySelectorAll(\'.kb-checkbox\').forEach(cb => cb.checked = this.checked)"> Seleziona Tutto</label>');
-                jfh.append('<button class="btn-warning btn-small btn-ml15" onclick="wnds.deleteSelectedKB()">Elimina Selezionati</button>');
+                jfh.append('<button class="btn-warning btn-small btn-ml15" data-help="Elimina|Rimuove le KB selezionate." onclick="wnds.deleteSelectedKB()">Elimina Selezionati</button>');
                 jfh.append('</div>');
 
                 jfh.append('<table class="table-data"><thead><tr><th>Sel.</th><th>Nome</th><th>Azioni</th></tr></thead><tbody>');
@@ -1809,9 +1742,9 @@ export const bindEventListener = function() {
                     const displayName = name.replace(/_/g, " ");
                     jfh.append('<tr>');
                     jfh.append(`<td><input type="checkbox" class="kb-checkbox" data-key="${key}"></td>`);
-                    jfh.append(`<td>${displayName}</td><td><button class="btn-load-item btn-success" onclick="wnds.loadKB('${key}')">Attiva</button>`);
-                    jfh.append(`<button class="btn-warning btn-small btn-ml5" onclick="wnds.exportKB('${key}')">Backup</button>`);
-                    jfh.append(`<button class="btn-delete-item btn-danger btn-ml5" onclick="wnds.deleteKB('${key}')">Elimina</button></td></tr>`);
+                    jfh.append(`<td>${displayName}</td><td><button class="btn-load-item btn-success" data-help="Attiva|Rende attiva la KB scelta." onclick="wnds.loadKB('${key}')">Attiva</button>`);
+                    jfh.append(`<button class="btn-warning btn-small btn-ml5" data-help="Backup|Scarica la KB in un file." onclick="wnds.exportKB('${key}')">Backup</button>`);
+                    jfh.append(`<button class="btn-delete-item btn-danger btn-ml5" data-help="Elimina|Rimuove la KB archiviata." onclick="wnds.deleteKB('${key}')">Elimina</button></td></tr>`);
                 });
                 jfh.append('</tbody></table></div>');
 
@@ -1855,7 +1788,7 @@ export const bindEventListener = function() {
             if (keys.length > 0) {
                 jfh.append('<div class="docs-header">');
                 jfh.append('<label><input type="checkbox" onclick="document.querySelectorAll(\'.convo-checkbox\').forEach(cb => cb.checked = this.checked)"> Seleziona Tutto</label>');
-                jfh.append('<button class="btn-warning btn-small btn-ml15" onclick="wnds.deleteSelectedConvo()">Elimina Selezionate</button>');
+                jfh.append('<button class="btn-warning btn-small btn-ml15" data-help="Elimina|Rimuove le chat selezionate." onclick="wnds.deleteSelectedConvo()">Elimina Selezionate</button>');
                 jfh.append('</div>');
 
                 jfh.append('<table class="table-data"><thead><tr><th>Sel.</th><th>Nome</th><th>Azioni</th></tr></thead><tbody>');
@@ -1864,9 +1797,9 @@ export const bindEventListener = function() {
                     const displayName = name.replace(/_/g, " ");
                     jfh.append('<tr>');
                     jfh.append(`<td><input type="checkbox" class="convo-checkbox" data-key="${key}"></td>`);
-                    jfh.append(`<td>${displayName}</td><td><button class="btn-load-item btn-success" onclick="wnds.loadConvo('${key}')">Attiva</button>`);
-                    jfh.append(`<button class="btn-warning btn-small btn-ml5" onclick="wnds.exportConvo('${key}')">Backup</button>`);
-                    jfh.append(`<button class="btn-delete-item btn-danger btn-ml5" onclick="wnds.deleteConvo('${key}')">Elimina</button></td></tr>`);
+                    jfh.append(`<td>${displayName}</td><td><button class="btn-load-item btn-success" data-help="Attiva|Mostra la conversazione scelta." onclick="wnds.loadConvo('${key}')">Attiva</button>`);
+                    jfh.append(`<button class="btn-warning btn-small btn-ml5" data-help="Backup|Scarica la chat in un file." onclick="wnds.exportConvo('${key}')">Backup</button>`);
+                    jfh.append(`<button class="btn-delete-item btn-danger btn-ml5" data-help="Elimina|Rimuove la chat archiviata." onclick="wnds.deleteConvo('${key}')">Elimina</button></td></tr>`);
                 });
                 jfh.append('</tbody></table></div>');
 
@@ -1898,10 +1831,10 @@ export const bindEventListener = function() {
             if (arr.length > 0) {
                 jfh.append('<div class="docs-header">');
                 jfh.append('<label><input type="checkbox" onclick="document.querySelectorAll(\'.doc-checkbox\').forEach(cb => cb.checked = this.checked)"> Seleziona Tutto</label>');
-                jfh.append('<button class="btn-warning btn-small btn-ml15" onclick="wnds.deleteSelectedDocs()">Elimina Selezionati</button>');
+                jfh.append('<button class="btn-warning btn-small btn-ml15" data-help="Elimina|Rimuove i documenti selezionati." onclick="wnds.deleteSelectedDocs()">Elimina Selezionati</button>');
                 jfh.append('</div>');
                 jfh.append('<table class="table-data"><thead><tr><th>Sel.</th><th>Nome</th><th>Azioni</th></tr></thead><tbody>');
-                arr.forEach((name, i) => jfh.append(`<tr><td><input type="checkbox" class="doc-checkbox" data-doc-name="${name}"></td><td>${name}</td><td><button class="btn-success" onclick="wnds.viewDoc(${i})">Visualizza</button></td></tr>`));
+                arr.forEach((name, i) => jfh.append(`<tr><td><input type="checkbox" class="doc-checkbox" data-doc-name="${name}"></td><td>${name}</td><td><button class="btn-success" data-help="Visualizza|Mostra il contenuto del file." onclick="wnds.viewDoc(${i})">Visualizza</button></td></tr>`));
                 jfh.append('</tbody></table>');
             } else jfh.append('<p>Nessun documento.</p>');
             jfh.append('</div>');
@@ -1974,14 +1907,12 @@ export const bindEventListener = function() {
 
             // --- Conversazione Attiva (kvStore) ---
             const thread = _kv(DATA_KEYS.KEY_THREAD);
-            const context = _kv(DATA_KEYS.PHASE2_CONTEXT);
-            if (thread || context) {
+            if (thread) {
                 jfh.append('<h4>Conversazione Attiva</h4><table class="table-data"><tbody>');
-                const msgCount = thread ? thread.value.length : 0;
+                const msgCount = thread.value.length;
                 const threadDesc = `Messaggi: ${msgCount}`;
                 const threadValue = thread?.value;
                 _row(DATA_KEYS.KEY_THREAD, threadDesc, threadValue);
-                _row(DATA_KEYS.PHASE2_CONTEXT, 'Contesto estratto', context?.value);
                 jfh.append('</tbody></table>');
             }
 
