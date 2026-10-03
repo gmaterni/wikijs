@@ -23,10 +23,15 @@ import { loadProviderModels } from "../llm/llm-catalog.js";
  * IMPLEMENTED_CLIENTS, tramite loader unico loadProviderModels.
  * I provider sono quelli con client implementato in llmclient: chi non ha
  * file ha 0 modelli, nessun errore.
- * @returns {Promise<Array<Object>>} Array di {provider, model, name?, windowSize?}
+ * L'ordine dell'array restituito è quello dei file (riga per riga,
+ * provider nell'ordine del registry): il campo `pos` lo rende esplicito
+ * così il reload da IndexedDB (che ordina per chiave primaria) può
+ * ripristinare l'ordine dei file invece dell'alfabetico.
+ * @returns {Promise<Array<Object>>} Array di {provider, model, name?, windowSize?, pos}
  */
 const _readDefaultModels = async function() {
     const allModels = [];
+    let pos = 0;
 
     for (const provider of IMPLEMENTED_CLIENTS) {
         const models = await loadProviderModels(provider);
@@ -36,8 +41,10 @@ const _readDefaultModels = async function() {
                 provider: provider,
                 model: m.name,
                 name: m.name,
-                windowSize: m.windowSize
+                windowSize: m.windowSize,
+                pos: pos
             });
+            pos++;
         }
     }
 
@@ -62,11 +69,13 @@ export const runReset = async function() {
 
     await LlmProvider.loadModels();
 
-    // Ricostruisce sempre un attivo valido dal catalogo appena caricato,
-    // lo persiste (altrimenti al reload tornerebbe il precedente) e
-    // aggiorna display e albero: senza questi passi il reset sembra
+    // Il reset riattiva sempre il primo della lista (prima riga di
+    // gemini): resetActiveToDefault invece di validateActive, che
+    // manterrebbe il precedente se ancora valido. Persiste subito
+    // (altrimenti al reload tornerebbe il precedente) e aggiorna
+    // display e albero: senza questi passi il reset sembra
     // non avere alcun effetto visibile.
-    LlmProvider.validateActive();
+    LlmProvider.resetActiveToDefault();
     await LlmProvider.saveConfig();
     updateActiveModelDisplay();
     refreshProviderTree();

@@ -5,7 +5,7 @@
  * controllati prima di qualunque scrittura. Nessun accesso a IndexedDB.
  *
  * @module validate
- * @version 0.1.1
+ * @version 0.1.2
  * @date 2026-09-25
  * @author WikiJS
  */

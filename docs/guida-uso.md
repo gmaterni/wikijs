@@ -1,6 +1,6 @@
 # Guida d'uso — WikiJS (`static/`)
 
-Versione 0.1.1. Dettagli di design in `docs/`: `architettura-knowledge-base.md`,
+Versione 0.1.2. Dettagli di design in `docs/`: `architettura-knowledge-base.md`,
 `compilazione-knowledge-base.md`, `workflow-query.md`.
 
 L'interfaccia (barra, menu laterale, finestre, stile LESS) è la stessa

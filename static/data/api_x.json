@@ -28,15 +28,6 @@
                 }
             ]
         },
-        "huggingface": {
-            "keys": [
-                {
-                    "name": "hf12",
-                    "key": "O2_hNDLVebH8EDgO7cPciTcVGZngmxI2Qf7Kz",
-                    "notes": "giuseppe.materni"
-                }
-            ]
-        },
         "groq": {
             "keys": [
                 {

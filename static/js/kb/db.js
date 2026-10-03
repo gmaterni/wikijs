@@ -6,7 +6,7 @@
  * per la libreria già testata dal committente quando disponibile.
  *
  * @module db
- * @version 0.1.1
+ * @version 0.1.2
  * @date 2026-09-25
  * @author WikiJS
  */

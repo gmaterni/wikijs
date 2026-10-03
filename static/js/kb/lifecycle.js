@@ -5,7 +5,7 @@
  * chiamata LLM, nessuna sorgente, nessuna ingestione.
  *
  * @module lifecycle
- * @version 0.1.1
+ * @version 0.1.2
  * @date 2026-09-25
  * @author WikiJS
  */

@@ -59,4 +59,4 @@ precaricate; chiavi personali solo sul dispositivo. Modalità query `llm`,
 - `wikijs_app_<userId>` — stato app (conversazione, KB attiva `demo`, chiavi, tema)
 - `wikijs_llm_<userId>` — modelli scoperti/selezionati
 
-Tutto resta nel browser. Versione attuale: **0.1.1**.
+Tutto resta nel browser. Versione attuale: **0.1.2**.

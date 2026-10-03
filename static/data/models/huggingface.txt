@@ -1,2 +1,0 @@
-Qwen/Qwen2.5-Coder-7B-Instruct|0|9|3.14
-openai/gpt-oss-120b|0|9|1.27

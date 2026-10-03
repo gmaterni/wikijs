@@ -1,2 +1,8 @@
-nex-agi/nex-n2.5-pro:free|262144|8|7.66
-nvidia/nemotron-3-ultra-550b-a55b:free|999424|10|18.97
+cohere/north-mini-code:free|256000|9|8.32
+dots-studio/dots-3-note-preview:free|512000|10|17.49
+inclusionai/ling-3.1-flash|262144|9|7.95
+liquid/lfm-2.5-2.6b:free|65536|10|9.75
+nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free|256000|9|8.30
+nvidia/nemotron-3-ultra-550b-a55b:free|999424|10|22.85
+nvidia/nemotron-3.5-lightning:free|999424|7|27.45
+stealth/space-bunny-alpha|999424|10|7.05

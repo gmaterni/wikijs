@@ -305,7 +305,15 @@ export const LlmProvider = {
      * _providerModels con i loro dati completi (windowSize, name, ecc.).
      * Viene chiamato PRIMA di applySelectionFilter per evitare che modelli
      * selezionati non presenti nei file .txt vengano persi.
-     * @param {Array<{provider: string, model: string, name?: string, windowSize?: number}>} selectedModels - Selezione utente.
+     * L'ordine di inserimento in _providerModels segue l'ordine dei file
+     * .txt (campo `pos` salvato dal Reset LLM): a parità di provider i
+     * modelli con `pos` numerico precedono gli altri; il confronto
+     * alfabetico resta solo come ripiego per righe senza `pos`
+     * (selezioni salvate prima dell'introduzione di `pos` o dalla
+     * finestra di selezione). Senza ordinamento l'ordine di
+     * _providerModels segue quello di lettura da IndexedDB (chiave
+     * primaria) e il modello di default diventa imprevedibile.
+     * @param {Array<{provider: string, model: string, name?: string, windowSize?: number, pos?: number}>} selectedModels - Selezione utente.
      * @returns {void}
      */
     ensureSelectedModels: function(selectedModels) {
@@ -314,8 +322,7 @@ export const LlmProvider = {
         }
 
         // Ordine deterministico: provider secondo il registry (IMPLEMENTED_CLIENTS),
-        // poi nome modello. Senza ordinamento l'ordine di _providerModels segue
-        // quello di lettura da IndexedDB e il modello di default diventa imprevedibile.
+        // poi ordine dei file .txt (pos), poi nome modello come ripiego.
         const providerRank = function(name) {
             const index = IMPLEMENTED_CLIENTS.indexOf(name);
             const rank = index === -1 ? IMPLEMENTED_CLIENTS.length : index;
@@ -324,6 +331,15 @@ export const LlmProvider = {
         const ordered = selectedModels.slice().sort(function(a, b) {
             const byProvider = providerRank(a.provider) - providerRank(b.provider);
             if (byProvider !== 0) return byProvider;
+            const posA = (typeof a.pos === "number") ? a.pos : null;
+            const posB = (typeof b.pos === "number") ? b.pos : null;
+            if (posA !== null && posB !== null) {
+                if (posA !== posB) return posA - posB;
+            } else if (posA !== null) {
+                return -1;
+            } else if (posB !== null) {
+                return 1;
+            }
             const nameA = a.model || "";
             const nameB = b.model || "";
             const byModel = nameA.localeCompare(nameB);
@@ -382,6 +398,27 @@ export const LlmProvider = {
         }
         _setDefaultConfig();
         return false;
+    },
+
+    /**
+     * Reimposta l'attivo al default: primo provider disponibile e suo
+     * primo modello (ordine dei file .txt, quindi prima riga di gemini).
+     * Usato dal Reset LLM, che deve sempre riattivare il primo della
+     * lista e non mantenere quello precedente (validateActive lo
+     * conserverebbe se ancora valido).
+     * @returns {boolean} true se il default è stato impostato.
+     */
+    resetActiveToDefault: function() {
+        _setDefaultConfig();
+        const applied = Boolean(
+            _activeProvider && _activeModel &&
+            _providerModels[_activeProvider] &&
+            _providerModels[_activeProvider].models[_activeModel]
+        );
+        if (!applied) {
+            console.error("LlmProvider.resetActiveToDefault: nessun modello disponibile.");
+        }
+        return applied;
     },
 
     /**

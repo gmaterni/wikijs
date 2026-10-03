@@ -5,7 +5,7 @@
  * Implementa la gestione degli errori globale e l'inizializzazione del sender.
  *
  * @module  app
- * @version 0.1.1
+ * @version 0.1.2
  * @date    2026-05-10
  * @author  Gemini CLI
  */
@@ -29,7 +29,7 @@ import "./services/uadialog.js";
 // ============================================================================
 
 /** @type {string} Versione dell'applicazione. */
-export const APP_VERSION = "0.1.1";
+export const APP_VERSION = "0.1.2";
 
 /** @type {string} URL del worker per l'invio eventi. */
 const WORKER_URL = "https://wwwanalyzer-backend.workerua.workers.dev";
